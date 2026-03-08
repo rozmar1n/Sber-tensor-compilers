@@ -10,6 +10,9 @@
 
 namespace {
 
+constexpr int kTraceStackWidth = 38;
+constexpr int kTraceInputWidth = 34;
+
 std::string stackSymbolForToken(const Token& token) {
     switch (token.type) {
         case TokenType::ID:
@@ -90,14 +93,14 @@ bool Parser::parse(bool trace) {
 }
 
 void Parser::printTraceHeader() const {
-    std::cout << std::left << std::setw(38) << "STACK"
-              << " | " << std::setw(34) << "INPUT"
+    std::cout << std::left << std::setw(kTraceStackWidth) << "STACK"
+              << " | " << std::setw(kTraceInputWidth) << "INPUT"
               << " | ACTION\n";
 }
 
 void Parser::printTraceStep(const Stack& stack, std::size_t tokenPosition, Action action) const {
-    std::cout << std::left << std::setw(38) << stackToString(stack)
-              << " | " << std::setw(34) << inputToString(tokenPosition)
+    std::cout << std::left << std::setw(kTraceStackWidth) << stackToString(stack)
+              << " | " << std::setw(kTraceInputWidth) << inputToString(tokenPosition)
               << " | " << actionToString(action) << '\n';
 }
 

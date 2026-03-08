@@ -8,6 +8,82 @@ Action errorAction() {
     return Action{ActionType::ERROR, -1};
 }
 
+Action shiftAction(int state) {
+    return Action{ActionType::SHIFT, state};
+}
+
+Action reduceAction(int production) {
+    return Action{ActionType::REDUCE, production};
+}
+
+Action acceptAction() {
+    return Action{ActionType::ACCEPT, 0};
+}
+
+enum class Terminal : int {
+    ID = 0,
+    PLUS,
+    MINUS,
+    STAR,
+    SLASH,
+    LPAREN,
+    RPAREN,
+    END
+};
+
+using ActionRow = std::array<Action, kNumTerminals>;
+using ActionTable = std::array<ActionRow, kNumStates>;
+using GotoRow = std::array<int, kNumNonTerminals>;
+using GotoTable = std::array<GotoRow, kNumStates>;
+
+constexpr int terminalToIndex(Terminal terminal) {
+    return static_cast<int>(terminal);
+}
+
+void setAction(ActionTable& table, int state, Terminal terminal, Action action) {
+    table[state][terminalToIndex(terminal)] = action;
+}
+
+void setShift(ActionTable& table, int state, Terminal terminal, int nextState) {
+    setAction(table, state, terminal, shiftAction(nextState));
+}
+
+template <std::size_t N>
+void setReduce(ActionTable& table, int state, const std::array<Terminal, N>& terminals,
+               int production) {
+    for (Terminal terminal : terminals) {
+        setAction(table, state, terminal, reduceAction(production));
+    }
+}
+
+void setAccept(ActionTable& table, int state, Terminal terminal) {
+    setAction(table, state, terminal, acceptAction());
+}
+
+void setGoto(GotoTable& table, int state, NonTerminal nonTerminal, int nextState) {
+    table[state][static_cast<int>(nonTerminal)] = nextState;
+}
+
+constexpr std::array<Terminal, 4> kFollowE = {
+    Terminal::PLUS, Terminal::MINUS, Terminal::RPAREN, Terminal::END};
+constexpr std::array<Terminal, 6> kFollowTF = {
+    Terminal::PLUS, Terminal::MINUS, Terminal::STAR, Terminal::SLASH, Terminal::RPAREN,
+    Terminal::END};
+
+static_assert(static_cast<int>(TokenType::ID) == 0, "TokenType::ID must map to terminal 0.");
+static_assert(static_cast<int>(TokenType::PLUS) == 1, "TokenType::PLUS must map to terminal 1.");
+static_assert(static_cast<int>(TokenType::MINUS) == 2, "TokenType::MINUS must map to terminal 2.");
+static_assert(static_cast<int>(TokenType::STAR) == 3, "TokenType::STAR must map to terminal 3.");
+static_assert(static_cast<int>(TokenType::SLASH) == 4, "TokenType::SLASH must map to terminal 4.");
+static_assert(static_cast<int>(TokenType::LPAREN) == 5,
+              "TokenType::LPAREN must map to terminal 5.");
+static_assert(static_cast<int>(TokenType::RPAREN) == 6,
+              "TokenType::RPAREN must map to terminal 6.");
+static_assert(static_cast<int>(TokenType::END) == kNumTerminals - 1,
+              "TokenType::END must map to the last terminal column.");
+static_assert(static_cast<int>(TokenType::INVALID) == kNumTerminals,
+              "TokenType::INVALID must stay outside ACTION columns.");
+
 }  // namespace
 
 const std::array<ProductionInfo, kNumProductions> PRODUCTIONS = {{
@@ -23,160 +99,93 @@ const std::array<ProductionInfo, kNumProductions> PRODUCTIONS = {{
 }};
 
 const std::array<std::array<Action, kNumTerminals>, kNumStates> ACTION_TABLE = [] {
-    std::array<std::array<Action, kNumTerminals>, kNumStates> table{};
+    ActionTable table{};
     for (auto& row : table) {
         row.fill(errorAction());
     }
 
-    // State 0
-    table[0][0] = Action{ActionType::SHIFT, 5};  // id
-    table[0][5] = Action{ActionType::SHIFT, 1};  // (
+    setShift(table, 0, Terminal::ID, 5);
+    setShift(table, 0, Terminal::LPAREN, 4);
 
-    // State 1
-    table[1][0] = Action{ActionType::SHIFT, 5};  // id
-    table[1][5] = Action{ActionType::SHIFT, 1};  // (
+    setShift(table, 1, Terminal::PLUS, 6);
+    setShift(table, 1, Terminal::MINUS, 7);
+    setAccept(table, 1, Terminal::END);
 
-    // State 2
-    table[2][1] = Action{ActionType::SHIFT, 7};   // +
-    table[2][2] = Action{ActionType::SHIFT, 8};   // -
-    table[2][7] = Action{ActionType::ACCEPT, 0};  // $
+    setReduce(table, 2, kFollowE, 3);
+    setShift(table, 2, Terminal::STAR, 8);
+    setShift(table, 2, Terminal::SLASH, 9);
 
-    // State 3
-    table[3][1] = Action{ActionType::REDUCE, 6};  // T -> F
-    table[3][2] = Action{ActionType::REDUCE, 6};  // T -> F
-    table[3][3] = Action{ActionType::REDUCE, 6};  // T -> F
-    table[3][4] = Action{ActionType::REDUCE, 6};  // T -> F
-    table[3][6] = Action{ActionType::REDUCE, 6};  // T -> F
-    table[3][7] = Action{ActionType::REDUCE, 6};  // T -> F
+    setReduce(table, 3, kFollowTF, 6);
 
-    // State 4
-    table[4][1] = Action{ActionType::REDUCE, 3};  // E -> T
-    table[4][2] = Action{ActionType::REDUCE, 3};  // E -> T
-    table[4][3] = Action{ActionType::SHIFT, 9};   // *
-    table[4][4] = Action{ActionType::SHIFT, 10};  // /
-    table[4][6] = Action{ActionType::REDUCE, 3};  // E -> T
-    table[4][7] = Action{ActionType::REDUCE, 3};  // E -> T
+    setShift(table, 4, Terminal::ID, 5);
+    setShift(table, 4, Terminal::LPAREN, 4);
 
-    // State 5
-    table[5][1] = Action{ActionType::REDUCE, 8};  // F -> id
-    table[5][2] = Action{ActionType::REDUCE, 8};  // F -> id
-    table[5][3] = Action{ActionType::REDUCE, 8};  // F -> id
-    table[5][4] = Action{ActionType::REDUCE, 8};  // F -> id
-    table[5][6] = Action{ActionType::REDUCE, 8};  // F -> id
-    table[5][7] = Action{ActionType::REDUCE, 8};  // F -> id
+    setReduce(table, 5, kFollowTF, 8);
 
-    // State 6
-    table[6][1] = Action{ActionType::SHIFT, 7};   // +
-    table[6][2] = Action{ActionType::SHIFT, 8};   // -
-    table[6][6] = Action{ActionType::SHIFT, 11};  // )
+    setShift(table, 6, Terminal::ID, 5);
+    setShift(table, 6, Terminal::LPAREN, 4);
 
-    // State 7
-    table[7][0] = Action{ActionType::SHIFT, 5};  // id
-    table[7][5] = Action{ActionType::SHIFT, 1};  // (
+    setShift(table, 7, Terminal::ID, 5);
+    setShift(table, 7, Terminal::LPAREN, 4);
 
-    // State 8
-    table[8][0] = Action{ActionType::SHIFT, 5};  // id
-    table[8][5] = Action{ActionType::SHIFT, 1};  // (
+    setShift(table, 8, Terminal::ID, 5);
+    setShift(table, 8, Terminal::LPAREN, 4);
 
-    // State 9
-    table[9][0] = Action{ActionType::SHIFT, 5};  // id
-    table[9][5] = Action{ActionType::SHIFT, 1};  // (
+    setShift(table, 9, Terminal::ID, 5);
+    setShift(table, 9, Terminal::LPAREN, 4);
 
-    // State 10
-    table[10][0] = Action{ActionType::SHIFT, 5};  // id
-    table[10][5] = Action{ActionType::SHIFT, 1};  // (
+    setShift(table, 10, Terminal::PLUS, 6);
+    setShift(table, 10, Terminal::MINUS, 7);
+    setShift(table, 10, Terminal::RPAREN, 15);
 
-    // State 11
-    table[11][1] = Action{ActionType::REDUCE, 7};  // F -> ( E )
-    table[11][2] = Action{ActionType::REDUCE, 7};  // F -> ( E )
-    table[11][3] = Action{ActionType::REDUCE, 7};  // F -> ( E )
-    table[11][4] = Action{ActionType::REDUCE, 7};  // F -> ( E )
-    table[11][6] = Action{ActionType::REDUCE, 7};  // F -> ( E )
-    table[11][7] = Action{ActionType::REDUCE, 7};  // F -> ( E )
+    setReduce(table, 11, kFollowE, 1);
+    setShift(table, 11, Terminal::STAR, 8);
+    setShift(table, 11, Terminal::SLASH, 9);
 
-    // State 12
-    table[12][1] = Action{ActionType::REDUCE, 1};  // E -> E + T
-    table[12][2] = Action{ActionType::REDUCE, 1};  // E -> E + T
-    table[12][3] = Action{ActionType::SHIFT, 9};   // *
-    table[12][4] = Action{ActionType::SHIFT, 10};  // /
-    table[12][6] = Action{ActionType::REDUCE, 1};  // E -> E + T
-    table[12][7] = Action{ActionType::REDUCE, 1};  // E -> E + T
+    setReduce(table, 12, kFollowE, 2);
+    setShift(table, 12, Terminal::STAR, 8);
+    setShift(table, 12, Terminal::SLASH, 9);
 
-    // State 13
-    table[13][1] = Action{ActionType::REDUCE, 2};  // E -> E - T
-    table[13][2] = Action{ActionType::REDUCE, 2};  // E -> E - T
-    table[13][3] = Action{ActionType::SHIFT, 9};   // *
-    table[13][4] = Action{ActionType::SHIFT, 10};  // /
-    table[13][6] = Action{ActionType::REDUCE, 2};  // E -> E - T
-    table[13][7] = Action{ActionType::REDUCE, 2};  // E -> E - T
+    setReduce(table, 13, kFollowTF, 4);
 
-    // State 14
-    table[14][1] = Action{ActionType::REDUCE, 4};  // T -> T * F
-    table[14][2] = Action{ActionType::REDUCE, 4};  // T -> T * F
-    table[14][3] = Action{ActionType::REDUCE, 4};  // T -> T * F
-    table[14][4] = Action{ActionType::REDUCE, 4};  // T -> T * F
-    table[14][6] = Action{ActionType::REDUCE, 4};  // T -> T * F
-    table[14][7] = Action{ActionType::REDUCE, 4};  // T -> T * F
-
-    // State 15
-    table[15][1] = Action{ActionType::REDUCE, 5};  // T -> T / F
-    table[15][2] = Action{ActionType::REDUCE, 5};  // T -> T / F
-    table[15][3] = Action{ActionType::REDUCE, 5};  // T -> T / F
-    table[15][4] = Action{ActionType::REDUCE, 5};  // T -> T / F
-    table[15][6] = Action{ActionType::REDUCE, 5};  // T -> T / F
-    table[15][7] = Action{ActionType::REDUCE, 5};  // T -> T / F
+    setReduce(table, 14, kFollowTF, 5);
+    setReduce(table, 15, kFollowTF, 7);
 
     return table;
 }();
 
 const std::array<std::array<int, kNumNonTerminals>, kNumStates> GOTO_TABLE = [] {
-    std::array<std::array<int, kNumNonTerminals>, kNumStates> table{};
+    GotoTable table{};
     for (auto& row : table) {
         row.fill(-1);
     }
 
-    table[0][kNonTerminalE] = 2;
-    table[0][kNonTerminalT] = 4;
-    table[0][kNonTerminalF] = 3;
+    setGoto(table, 0, NonTerminal::E, 1);
+    setGoto(table, 0, NonTerminal::T, 2);
+    setGoto(table, 0, NonTerminal::F, 3);
 
-    table[1][kNonTerminalE] = 6;
-    table[1][kNonTerminalT] = 4;
-    table[1][kNonTerminalF] = 3;
+    setGoto(table, 4, NonTerminal::E, 10);
+    setGoto(table, 4, NonTerminal::T, 2);
+    setGoto(table, 4, NonTerminal::F, 3);
 
-    table[7][kNonTerminalT] = 12;
-    table[7][kNonTerminalF] = 3;
+    setGoto(table, 6, NonTerminal::T, 11);
+    setGoto(table, 6, NonTerminal::F, 3);
 
-    table[8][kNonTerminalT] = 13;
-    table[8][kNonTerminalF] = 3;
+    setGoto(table, 7, NonTerminal::T, 12);
+    setGoto(table, 7, NonTerminal::F, 3);
 
-    table[9][kNonTerminalF] = 14;
-    table[10][kNonTerminalF] = 15;
+    setGoto(table, 8, NonTerminal::F, 13);
+    setGoto(table, 9, NonTerminal::F, 14);
 
     return table;
 }();
 
 int terminalIndex(TokenType tokenType) {
-    switch (tokenType) {
-        case TokenType::ID:
-            return 0;
-        case TokenType::PLUS:
-            return 1;
-        case TokenType::MINUS:
-            return 2;
-        case TokenType::STAR:
-            return 3;
-        case TokenType::SLASH:
-            return 4;
-        case TokenType::LPAREN:
-            return 5;
-        case TokenType::RPAREN:
-            return 6;
-        case TokenType::END:
-            return 7;
-        case TokenType::INVALID:
-            return -1;
+    const int index = static_cast<int>(tokenType);
+    if (index < 0 || index >= kNumTerminals) {
+        return -1;
     }
-    return -1;
+    return index;
 }
 
 int nonTerminalIndex(NonTerminal nonTerminal) {
