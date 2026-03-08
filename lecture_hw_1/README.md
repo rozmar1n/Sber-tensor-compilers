@@ -44,9 +44,11 @@ Detailed derivation is in `docs`:
 - LR(0) automaton: `docs/lr0_automaton.md`
 - ACTION/GOTO table: `docs/slr_table.md`
 
-In code, the tables are defined manually:
+In code, parser tables are stored as CSV and embedded at build time:
 
-- `src/slr_table.cpp`
+- `tables/action_table.csv`
+- `tables/goto_table.csv`
+- generated header: `build/generated/slr_tables_generated.hpp`
 
 ## 4. Project Structure
 
@@ -67,6 +69,11 @@ lecture_hw_1/
 ├── docs/
 │   ├── lr0_automaton.md
 │   └── slr_table.md
+├── tables/
+│   ├── action_table.csv
+│   └── goto_table.csv
+├── cmake/
+│   └── generate_slr_tables.cmake
 ├── tests/
 │   ├── test_valid.txt
 │   ├── test_valid_precedence.txt
@@ -104,7 +111,20 @@ From stdin:
 echo "(a + 2) * b - 10 / c" | ./build/slr_parser
 ```
 
-## 7. Parsing Visualization
+## 7. Table Generation
+
+During `cmake --build build`, CMake runs `cmake/generate_slr_tables.cmake` and generates:
+
+- `build/generated/slr_tables_generated.hpp`
+
+The generator uses strict CSV validation:
+
+- no headers
+- no comments
+- no empty lines
+- fixed table sizes (ACTION: `16x8`, GOTO: `16x3`)
+
+## 8. Parsing Visualization
 
 Each step prints:
 
@@ -123,8 +143,8 @@ $ 0 ( 1 alpha 5                        | + 12 ) * beta $                    | Re
 Result: ACCEPT
 ```
 
-## 8. Assignment Constraints
+## 9. Assignment Constraints
 
 - Flex is used only for tokenization.
 - Bison and other parser generators are not used.
-- The SLR ACTION/GOTO table is defined manually.
+- The SLR ACTION/GOTO table is maintained manually in CSV and embedded at build time.
