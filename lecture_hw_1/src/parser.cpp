@@ -10,6 +10,9 @@
 
 namespace {
 
+constexpr int kTraceStackWidth = 38;
+constexpr int kTraceInputWidth = 34;
+
 std::string stackSymbolForToken(const Token& token) {
     switch (token.type) {
         case TokenType::ID:
@@ -47,15 +50,13 @@ Parser::Parser(Lexer& lexer) {
 }
 
 bool Parser::parse(bool trace) {
-    std::vector<StackEntry> stack;
+    Stack stack;
     stack.push_back({"$", 0});
 
     std::size_t tokenPosition = 0;
 
     if (trace) {
-        std::cout << std::left << std::setw(38) << "STACK"
-                  << " | " << std::setw(34) << "INPUT"
-                  << " | ACTION\n";
+        printTraceHeader();
     }
 
     while (true) {
@@ -64,51 +65,83 @@ bool Parser::parse(bool trace) {
         const Action action = actionFor(state, lookahead.type);
 
         if (trace) {
-            std::cout << std::left << std::setw(38) << stackToString(stack)
-                      << " | " << std::setw(34) << inputToString(tokenPosition)
-                      << " | " << actionToString(action) << '\n';
+            printTraceStep(stack, tokenPosition, action);
         }
 
-        if (action.type == ActionType::SHIFT) {
-            stack.push_back({stackSymbolForToken(lookahead), action.value});
-            ++tokenPosition;
-            continue;
-        }
-
-        if (action.type == ActionType::REDUCE) {
-            if (action.value <= 0 || action.value >= kNumProductions) {
-                return false;
-            }
-
-            const ProductionInfo& production = PRODUCTIONS[action.value];
-            for (int i = 0; i < production.rhsLength; ++i) {
-                if (stack.size() <= 1) {
+        switch (action.type) {
+            case ActionType::SHIFT:
+                if (!applyShift(lookahead, action, stack, tokenPosition)) {
                     return false;
                 }
-                stack.pop_back();
-            }
-
-            const int fromState = stack.back().state;
-            const int nextState = gotoState(fromState, nonTerminalIndex(production.lhs));
-            if (nextState < 0) {
+                break;
+            case ActionType::REDUCE:
+                if (!applyReduce(action, stack)) {
+                    return false;
+                }
+                break;
+            case ActionType::ACCEPT:
+                return true;
+            case ActionType::ERROR:
+                if (!handleError(lookahead, trace)) {
+                    return false;
+                }
+                break;
+            default:
                 return false;
-            }
-            stack.push_back({production.lhsName, nextState});
-            continue;
         }
-
-        if (action.type == ActionType::ACCEPT) {
-            return true;
-        }
-
-        if (trace && lookahead.type == TokenType::INVALID) {
-            std::cout << "Lexer error: invalid token '" << lookahead.lexeme << "'\n";
-        }
-        return false;
     }
 }
 
-std::string Parser::stackToString(const std::vector<StackEntry>& stack) const {
+void Parser::printTraceHeader() const {
+    std::cout << std::left << std::setw(kTraceStackWidth) << "STACK"
+              << " | " << std::setw(kTraceInputWidth) << "INPUT"
+              << " | ACTION\n";
+}
+
+void Parser::printTraceStep(const Stack& stack, std::size_t tokenPosition, Action action) const {
+    std::cout << std::left << std::setw(kTraceStackWidth) << stackToString(stack)
+              << " | " << std::setw(kTraceInputWidth) << inputToString(tokenPosition)
+              << " | " << actionToString(action) << '\n';
+}
+
+bool Parser::applyShift(const Token& lookahead, Action action, Stack& stack,
+                        std::size_t& tokenPosition) const {
+    stack.push_back({stackSymbolForToken(lookahead), action.value});
+    ++tokenPosition;
+    return true;
+}
+
+bool Parser::applyReduce(Action action, Stack& stack) const {
+    if (action.value <= 0 || action.value >= kNumProductions) {
+        return false;
+    }
+
+    const ProductionInfo& production = PRODUCTIONS[action.value];
+    for (int i = 0; i < production.rhsLength; ++i) {
+        if (stack.size() <= 1) {
+            return false;
+        }
+        stack.pop_back();
+    }
+
+    const int fromState = stack.back().state;
+    const int nextState = gotoState(fromState, nonTerminalIndex(production.lhs));
+    if (nextState < 0) {
+        return false;
+    }
+
+    stack.push_back({production.lhsName, nextState});
+    return true;
+}
+
+bool Parser::handleError(const Token& lookahead, bool trace) const {
+    if (trace && lookahead.type == TokenType::INVALID) {
+        std::cout << "Lexer error: invalid token '" << lookahead.lexeme << "'\n";
+    }
+    return false;
+}
+
+std::string Parser::stackToString(const Stack& stack) const {
     std::ostringstream out;
     for (std::size_t i = 0; i < stack.size(); ++i) {
         if (i > 0) {
