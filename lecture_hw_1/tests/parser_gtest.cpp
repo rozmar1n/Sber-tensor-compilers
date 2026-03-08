@@ -16,6 +16,12 @@ struct ParserCase {
     bool expectedResult;
 };
 
+struct InlineParserCase {
+    std::string name;
+    std::string input;
+    bool expectedResult;
+};
+
 std::string readInput(const std::filesystem::path& path) {
     std::ifstream input(path);
     if (!input) {
@@ -40,6 +46,7 @@ std::string testNameFromPath(const std::string& filePath) {
 }
 
 class ParserTxtCasesTest : public ::testing::TestWithParam<ParserCase> {};
+class ParserInlineCasesTest : public ::testing::TestWithParam<InlineParserCase> {};
 
 TEST_P(ParserTxtCasesTest, MatchesExpectedParseResult) {
     const ParserCase& testCase = GetParam();
@@ -63,6 +70,28 @@ INSTANTIATE_TEST_SUITE_P(
         ParserCase{"tests/test_invalid_identifier.txt", false}),
     [](const ::testing::TestParamInfo<ParserCase>& info) {
         return testNameFromPath(info.param.filePath);
+    });
+
+TEST_P(ParserInlineCasesTest, MatchesExpectedParseResult) {
+    const InlineParserCase& testCase = GetParam();
+
+    Lexer lexer(testCase.input);
+    Parser parser(lexer);
+
+    EXPECT_EQ(parser.parse(false), testCase.expectedResult) << "Input: '" << testCase.input << "'";
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    EdgeCases,
+    ParserInlineCasesTest,
+    ::testing::Values(
+        InlineParserCase{"SingleIdentifier", "a", true},
+        InlineParserCase{"NestedParentheses", "((a))", true},
+        InlineParserCase{"DanglingPlus", "a+", false},
+        InlineParserCase{"OnlyOperator", "+", false},
+        InlineParserCase{"EmptyInput", "", false}),
+    [](const ::testing::TestParamInfo<InlineParserCase>& info) {
+        return info.param.name;
     });
 
 }  // namespace
