@@ -39,3 +39,6 @@
 
 # debug information files
 *.dwo
+/lecture_hw_2_IR/IR.pdf
+*.png
+*.dot

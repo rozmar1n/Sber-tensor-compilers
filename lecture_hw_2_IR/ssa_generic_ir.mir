@@ -1,0 +1,53 @@
+int function1(int* a, int n) {
+bb0:
+    result0 = 0;
+    i0 = 0;
+    br bb1;
+
+bb1:
+    result1 = phi(result0:bb0, result3:bb7);
+    i1 = phi(i0:bb0, i2:bb7);
+    c0 = i1 < n;
+    br c0, bb2, bb8;
+
+bb2:
+    x0 = 5;
+    j0 = 0;
+    br bb3;
+
+bb3:
+    result2 = phi(result1:bb2, result5:bb5, result4:bb6);
+    j1 = phi(j0:bb2, j2:bb5, j3:bb6);
+    c1 = j1 < n;
+    br c1, bb4, bb7;
+
+bb4:
+    t0 = j1 % 2;
+    c2 = t0 == 0;
+    br c2, bb5, bb6;
+
+bb5:
+    result5 = result2;
+    j2 = j1 + 1;
+    br bb3;
+
+bb6:
+    addr0 = a + j1;
+    val0 = *addr0;
+    t1 = 2 * 3;
+    t2 = t1 * val0;
+    t3 = t2 * x0;
+    t4 = t3 - i1;
+    t5 = t4 - 2;
+    result4 = result2 + t5;
+    j3 = j1 + 1;
+    br bb3;
+
+bb7:
+    result3 = result2;
+    i2 = i1 + 1;
+    br bb1;
+
+bb8:
+    return result1;
+}
