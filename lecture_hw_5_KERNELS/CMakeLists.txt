@@ -10,6 +10,9 @@ option(KERNELS_ENABLE_AVX2 "Enable AVX2 kernels" ON)
 
 add_library(kernels STATIC
     src/matmul_naive.cpp
+    src/matmul_cache_friendly.cpp
+    src/matmul_tiled.cpp
+    src/matmul_vectorized.cpp
 )
 
 target_include_directories(kernels
