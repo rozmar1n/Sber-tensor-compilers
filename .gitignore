@@ -41,7 +41,11 @@
 *.dwo
 /lecture_hw_2_IR/IR.pdf
 *.png
+!/lecture_hw_5_KERNELS/results/*.png
 *.dot
 *__pycache__
 /lecture_hw_3_CODEGEN/CODEGEN.pdf
 /lecture_hw_4_MLP/MLP.pdf
+.worktrees/
+build/
+**/build/
