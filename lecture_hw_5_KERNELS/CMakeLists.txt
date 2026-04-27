@@ -13,6 +13,9 @@ add_library(kernels STATIC
     src/matmul_cache_friendly.cpp
     src/matmul_tiled.cpp
     src/matmul_vectorized.cpp
+    src/conv2d_naive.cpp
+    src/im2col.cpp
+    src/conv2d_im2col.cpp
 )
 
 target_include_directories(kernels
@@ -45,6 +48,7 @@ endif()
 add_executable(kernels_tests
     tests/test_main.cpp
     tests/test_matmul.cpp
+    tests/test_conv2d.cpp
 )
 
 target_link_libraries(kernels_tests PRIVATE kernels)
