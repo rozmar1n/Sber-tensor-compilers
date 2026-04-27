@@ -46,3 +46,5 @@
 /lecture_hw_3_CODEGEN/CODEGEN.pdf
 /lecture_hw_4_MLP/MLP.pdf
 .worktrees/
+build/
+**/build/

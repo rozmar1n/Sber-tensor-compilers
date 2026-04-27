@@ -1,23 +1,34 @@
-operation,variant,M,K,N,input_shape,kernel_shape,time_ms
-matmul,naive,64,64,64,,,0.397366
-matmul,cache_friendly,64,64,64,,,0.217314
-matmul,tiled,64,64,64,,,0.315883
-matmul,vectorized,64,64,64,,,0.0576874
-matmul,naive,128,128,128,,,3.36343
-matmul,cache_friendly,128,128,128,,,1.76716
-matmul,tiled,128,128,128,,,2.1445
-matmul,vectorized,128,128,128,,,0.375405
-matmul,naive,256,256,256,,,17.1662
-matmul,cache_friendly,256,256,256,,,11.0342
-matmul,tiled,256,256,256,,,11.0546
-matmul,vectorized,256,256,256,,,1.75741
-matmul,naive,512,512,512,,,188.44
-matmul,cache_friendly,512,512,512,,,105.373
-matmul,tiled,512,512,512,,,90.7688
-matmul,vectorized,512,512,512,,,14.1453
-conv,naive,,,,1x3x32x32,8x3x3x3,0.280405
-conv,im2col,,,,1x3x32x32,8x3x3x3,0.101921
-conv,naive,,,,1x3x64x64,16x3x3x3,2.37935
-conv,im2col,,,,1x3x64x64,16x3x3x3,0.666591
-conv,naive,,,,1x16x64x64,32x16x3x3,31.0474
-conv,im2col,,,,1x16x64x64,32x16x3x3,3.04653
+2026-04-27T21:26:05+03:00
+Running /tmp/kernels-gbench-adapt-avx/kernels_bench
+Run on (12 X 4400 MHz CPU s)
+CPU Caches:
+  L1 Data 48 KiB (x6)
+  L1 Instruction 32 KiB (x6)
+  L2 Unified 1280 KiB (x6)
+  L3 Unified 12288 KiB (x1)
+Load Average: 0.66, 0.53, 0.52
+***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
+***WARNING*** Library was built as DEBUG. Timings may be affected.
+name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
+"bench_matmul_naive/64",84,134994,134855,ns,,3.03733e+07,"64x64x64",,
+"bench_matmul_naive/128",12,1.13889e+06,1.13885e+06,ns,,1.43864e+07,"128x128x128",,
+"bench_matmul_naive/256",2,9.96982e+06,9.96957e+06,ns,,6.57361e+06,"256x256x256",,
+"bench_matmul_naive/512",1,1.23965e+08,1.23842e+08,ns,,2.11677e+06,"512x512x512",,
+"bench_matmul_cache_friendly/64",193,72891.5,72768.4,ns,,5.62882e+07,"64x64x64",,
+"bench_matmul_cache_friendly/128",21,685998,685614,ns,,2.38968e+07,"128x128x128",,
+"bench_matmul_cache_friendly/256",2,6.71738e+06,6.71715e+06,ns,,9.75652e+06,"256x256x256",,
+"bench_matmul_cache_friendly/512",1,6.13696e+07,6.1364e+07,ns,,4.27195e+06,"512x512x512",,
+"bench_matmul_tiled/64/32",140,99828.4,99825.4,ns,,4.10316e+07,"64x64x64, tile=32",,
+"bench_matmul_tiled/128/32",18,801075,801053,ns,,2.04531e+07,"128x128x128, tile=32",,
+"bench_matmul_tiled/256/32",2,6.39246e+06,6.39225e+06,ns,,1.02524e+07,"256x256x256, tile=32",,
+"bench_matmul_tiled/512/32",1,5.26702e+07,5.26535e+07,ns,,4.97866e+06,"512x512x512, tile=32",,
+"bench_matmul_vectorized/64",798,17060.6,17060,ns,,2.40093e+08,"64x64x64",,
+"bench_matmul_vectorized/128",95,148136,148132,ns,,1.10604e+08,"128x128x128",,
+"bench_matmul_vectorized/256",12,1.14008e+06,1.13972e+06,ns,,5.75018e+07,"256x256x256",,
+"bench_matmul_vectorized/512",2,9.04582e+06,9.0455e+06,ns,,2.89806e+07,"512x512x512",,
+"bench_conv2d_naive/1/3/32/32/8/3/3",86,162013,162009,ns,,4.4442e+07,"1x3x32x32, kernel=8x3x3x3",,
+"bench_conv2d_naive/1/3/64/64/16/3/3",10,1.37375e+06,1.37372e+06,ns,,4.47717e+07,"1x3x64x64, kernel=16x3x3x3",,
+"bench_conv2d_naive/1/16/64/64/32/3/3",1,1.74566e+07,1.74561e+07,ns,,7.04672e+06,"1x16x64x64, kernel=32x16x3x3",,
+"bench_conv2d_im2col/1/3/32/32/8/3/3",241,58209.6,58207.8,ns,,1.23695e+08,"1x3x32x32, kernel=8x3x3x3",,
+"bench_conv2d_im2col/1/3/64/64/16/3/3",36,383920,383511,ns,,1.60371e+08,"1x3x64x64, kernel=16x3x3x3",,
+"bench_conv2d_im2col/1/16/64/64/32/3/3",10,1.28663e+06,1.28662e+06,ns,,9.56052e+07,"1x16x64x64, kernel=32x16x3x3",,

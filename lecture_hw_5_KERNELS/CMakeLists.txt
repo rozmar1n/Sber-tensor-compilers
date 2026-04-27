@@ -54,11 +54,17 @@ add_executable(kernels_tests
 target_link_libraries(kernels_tests PRIVATE kernels)
 target_compile_options(kernels_tests PRIVATE -Wall -Wextra -Wpedantic)
 
+find_package(benchmark REQUIRED)
+
 add_executable(kernels_bench
     benchmarks/kernels_bench.cpp
 )
 
-target_link_libraries(kernels_bench PRIVATE kernels)
+target_link_libraries(kernels_bench
+    PRIVATE
+        kernels
+        benchmark::benchmark
+)
 target_compile_options(kernels_bench PRIVATE -Wall -Wextra -Wpedantic)
 
 enable_testing()
