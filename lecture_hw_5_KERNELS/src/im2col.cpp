@@ -11,7 +11,8 @@ void im2col(const float* input,
             int height,
             int width,
             int kernel_h,
-            int kernel_w) {
+            int kernel_w)
+{
     require_non_null(input, "input");
     require_non_null(col, "col");
     require_positive(batch, "batch");
@@ -32,18 +33,20 @@ void im2col(const float* input,
     const std::size_t height_out_size = to_size(height_out, "height_out");
     const std::size_t width_out_size = to_size(width_out, "width_out");
 
-    const std::size_t col_width =
-        checked_mul_size(checked_mul_size(channels_in_size, kernel_h_size, "im2col width"),
-                         kernel_w_size, "im2col width");
-    const std::size_t col_rows =
-        checked_mul_size(checked_mul_size(batch_size, height_out_size, "im2col rows"),
-                         width_out_size, "im2col rows");
+    const std::size_t col_width = checked_mul_size(
+        checked_mul_size(channels_in_size, kernel_h_size, "im2col width"),
+        kernel_w_size,
+        "im2col width");
+    const std::size_t col_rows = checked_mul_size(
+        checked_mul_size(batch_size, height_out_size, "im2col rows"),
+        width_out_size,
+        "im2col rows");
     checked_mul_size(col_rows, col_width, "im2col size");
 
     const std::size_t input_image_size =
         checked_mul_size(height_size, width_size, "input image size");
-    const std::size_t input_channel_size =
-        checked_mul_size(channels_in_size, input_image_size, "input channel size");
+    const std::size_t input_channel_size = checked_mul_size(
+        channels_in_size, input_image_size, "input channel size");
     checked_mul_size(batch_size, input_channel_size, "input size");
 
     for (int n = 0; n < batch; ++n) {
@@ -63,7 +66,8 @@ void im2col(const float* input,
                                     kernel_w_size +
                                 static_cast<std::size_t>(kw);
                             const std::size_t input_index =
-                                ((static_cast<std::size_t>(n) * channels_in_size +
+                                ((static_cast<std::size_t>(n) *
+                                      channels_in_size +
                                   static_cast<std::size_t>(ci)) *
                                      height_size +
                                  static_cast<std::size_t>(oh + kh)) *
@@ -83,7 +87,8 @@ void reshape_kernel_for_im2col(const float* kernel,
                                int channels_out,
                                int channels_in,
                                int kernel_h,
-                               int kernel_w) {
+                               int kernel_w)
+{
     require_non_null(kernel, "kernel");
     require_non_null(kernel_matrix, "kernel_matrix");
     require_positive(channels_out, "channels_out");
@@ -97,10 +102,11 @@ void reshape_kernel_for_im2col(const float* kernel,
     const std::size_t kernel_w_size = to_size(kernel_w, "kernel_w");
     const std::size_t kernel_spatial_size =
         checked_mul_size(kernel_h_size, kernel_w_size, "kernel spatial size");
-    const std::size_t kernel_input_size =
-        checked_mul_size(channels_in_size, kernel_spatial_size, "kernel input size");
+    const std::size_t kernel_input_size = checked_mul_size(
+        channels_in_size, kernel_spatial_size, "kernel input size");
     checked_mul_size(channels_out_size, kernel_input_size, "kernel size");
-    checked_mul_size(kernel_input_size, channels_out_size, "kernel matrix size");
+    checked_mul_size(
+        kernel_input_size, channels_out_size, "kernel matrix size");
 
     for (int co = 0; co < channels_out; ++co) {
         for (int ci = 0; ci < channels_in; ++ci) {
@@ -112,7 +118,8 @@ void reshape_kernel_for_im2col(const float* kernel,
                             kernel_w_size +
                         static_cast<std::size_t>(kw);
                     const std::size_t matrix_index =
-                        matrix_row * channels_out_size + static_cast<std::size_t>(co);
+                        matrix_row * channels_out_size +
+                        static_cast<std::size_t>(co);
                     const std::size_t kernel_index =
                         ((static_cast<std::size_t>(co) * channels_in_size +
                           static_cast<std::size_t>(ci)) *
@@ -127,4 +134,4 @@ void reshape_kernel_for_im2col(const float* kernel,
     }
 }
 
-}  // namespace kernels
+} // namespace kernels

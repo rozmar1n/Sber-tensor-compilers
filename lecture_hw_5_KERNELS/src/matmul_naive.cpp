@@ -4,7 +4,8 @@
 
 namespace kernels {
 
-void matmul_naive(const float* A, const float* B, float* C, int M, int K, int N) {
+void matmul_naive(const float* A, const float* B, float* C, int M, int K, int N)
+{
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
@@ -23,4 +24,4 @@ void matmul_naive(const float* A, const float* B, float* C, int M, int K, int N)
     }
 }
 
-}  // namespace kernels
+} // namespace kernels

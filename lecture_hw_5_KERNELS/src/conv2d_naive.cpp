@@ -13,7 +13,8 @@ void conv2d_naive(const float* input,
                   int width,
                   int channels_out,
                   int kernel_h,
-                  int kernel_w) {
+                  int kernel_w)
+{
     require_non_null(input, "input");
     require_non_null(kernel, "kernel");
     require_non_null(output, "output");
@@ -39,20 +40,20 @@ void conv2d_naive(const float* input,
 
     const std::size_t input_image_size =
         checked_mul_size(height_size, width_size, "input image size");
-    const std::size_t input_channel_size =
-        checked_mul_size(channels_in_size, input_image_size, "input channel size");
+    const std::size_t input_channel_size = checked_mul_size(
+        channels_in_size, input_image_size, "input channel size");
     checked_mul_size(batch_size, input_channel_size, "input size");
 
     const std::size_t kernel_spatial_size =
         checked_mul_size(kernel_h_size, kernel_w_size, "kernel spatial size");
-    const std::size_t kernel_input_size =
-        checked_mul_size(channels_in_size, kernel_spatial_size, "kernel input size");
+    const std::size_t kernel_input_size = checked_mul_size(
+        channels_in_size, kernel_spatial_size, "kernel input size");
     checked_mul_size(channels_out_size, kernel_input_size, "kernel size");
 
     const std::size_t output_image_size =
         checked_mul_size(height_out_size, width_out_size, "output image size");
-    const std::size_t output_channel_size =
-        checked_mul_size(channels_out_size, output_image_size, "output channel size");
+    const std::size_t output_channel_size = checked_mul_size(
+        channels_out_size, output_image_size, "output channel size");
     checked_mul_size(batch_size, output_channel_size, "output size");
 
     for (int n = 0; n < batch; ++n) {
@@ -64,20 +65,23 @@ void conv2d_naive(const float* input,
                         for (int kh = 0; kh < kernel_h; ++kh) {
                             for (int kw = 0; kw < kernel_w; ++kw) {
                                 const std::size_t input_index =
-                                    ((static_cast<std::size_t>(n) * channels_in_size +
+                                    ((static_cast<std::size_t>(n) *
+                                          channels_in_size +
                                       static_cast<std::size_t>(ci)) *
                                          height_size +
                                      static_cast<std::size_t>(oh + kh)) *
                                         width_size +
                                     static_cast<std::size_t>(ow + kw);
                                 const std::size_t kernel_index =
-                                    ((static_cast<std::size_t>(co) * channels_in_size +
+                                    ((static_cast<std::size_t>(co) *
+                                          channels_in_size +
                                       static_cast<std::size_t>(ci)) *
                                          kernel_h_size +
                                      static_cast<std::size_t>(kh)) *
                                         kernel_w_size +
                                     static_cast<std::size_t>(kw);
-                                sum += input[input_index] * kernel[kernel_index];
+                                sum +=
+                                    input[input_index] * kernel[kernel_index];
                             }
                         }
                     }
@@ -95,4 +99,4 @@ void conv2d_naive(const float* input,
     }
 }
 
-}  // namespace kernels
+} // namespace kernels

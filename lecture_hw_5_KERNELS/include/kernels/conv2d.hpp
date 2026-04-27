@@ -4,7 +4,8 @@
 
 namespace kernels {
 
-inline int conv2d_output_size(int input_size, int kernel_size) {
+inline int conv2d_output_size(int input_size, int kernel_size)
+{
     if (input_size <= 0) {
         throw std::invalid_argument("input_size");
     }
@@ -55,4 +56,4 @@ void conv2d_im2col(const float* input,
                    int kernel_h,
                    int kernel_w);
 
-}  // namespace kernels
+} // namespace kernels

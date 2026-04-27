@@ -10,22 +10,29 @@ namespace test {
 
 using TestFn = void (*)();
 
-struct TestCase {
+struct TestCase
+{
     const char* name;
     TestFn run;
 };
 
-inline void expect_near(float actual, float expected, float eps, const char* expr) {
+inline void expect_near(float actual,
+                        float expected,
+                        float eps,
+                        const char* expr)
+{
     if (std::fabs(actual - expected) > eps) {
-        throw std::runtime_error(std::string(expr) + " expected " + std::to_string(expected) +
-                                 ", got " + std::to_string(actual));
+        throw std::runtime_error(std::string(expr) + " expected " +
+                                 std::to_string(expected) + ", got " +
+                                 std::to_string(actual));
     }
 }
 
 inline void expect_vector_near(const std::vector<float>& actual,
                                const std::vector<float>& expected,
                                float eps,
-                               const char* expr) {
+                               const char* expr)
+{
     if (actual.size() != expected.size()) {
         throw std::runtime_error(std::string(expr) + " size mismatch");
     }
@@ -41,4 +48,4 @@ inline void expect_vector_near(const std::vector<float>& actual,
 
 int run_tests(const std::vector<TestCase>& tests);
 
-}  // namespace test
+} // namespace test

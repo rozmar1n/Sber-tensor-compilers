@@ -13,7 +13,8 @@ void matmul_tiled(const float* A,
                   int M,
                   int K,
                   int N,
-                  int tile_size) {
+                  int tile_size)
+{
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
@@ -22,7 +23,8 @@ void matmul_tiled(const float* A,
     require_positive(N, "N");
     require_positive(tile_size, "tile_size");
 
-    std::fill(C, C + static_cast<std::size_t>(M) * static_cast<std::size_t>(N), 0.0f);
+    std::fill(
+        C, C + static_cast<std::size_t>(M) * static_cast<std::size_t>(N), 0.0f);
 
     for (int ii = 0; ii < M; ii += tile_size) {
         for (int jj = 0; jj < N; jj += tile_size) {
@@ -45,4 +47,4 @@ void matmul_tiled(const float* A,
     }
 }
 
-}  // namespace kernels
+} // namespace kernels

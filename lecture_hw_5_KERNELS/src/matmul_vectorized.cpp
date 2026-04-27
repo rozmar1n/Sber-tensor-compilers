@@ -14,7 +14,8 @@ namespace kernels {
 namespace {
 
 #if KERNELS_ENABLE_AVX2
-float horizontal_sum(__m256 values) {
+float horizontal_sum(__m256 values)
+{
     alignas(32) float lanes[8];
     _mm256_storeu_ps(lanes, values);
 
@@ -26,9 +27,15 @@ float horizontal_sum(__m256 values) {
 }
 #endif
 
-}  // namespace
+} // namespace
 
-void matmul_vectorized(const float* A, const float* B, float* C, int M, int K, int N) {
+void matmul_vectorized(const float* A,
+                       const float* B,
+                       float* C,
+                       int M,
+                       int K,
+                       int N)
+{
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
@@ -37,7 +44,8 @@ void matmul_vectorized(const float* A, const float* B, float* C, int M, int K, i
     require_positive(N, "N");
 
 #if KERNELS_ENABLE_AVX2
-    std::vector<float> B_T(static_cast<std::size_t>(N) * static_cast<std::size_t>(K));
+    std::vector<float> B_T(static_cast<std::size_t>(N) *
+                           static_cast<std::size_t>(K));
     transpose(B, B_T.data(), K, N);
 
     for (int i = 0; i < M; ++i) {
@@ -62,4 +70,4 @@ void matmul_vectorized(const float* A, const float* B, float* C, int M, int K, i
 #endif
 }
 
-}  // namespace kernels
+} // namespace kernels

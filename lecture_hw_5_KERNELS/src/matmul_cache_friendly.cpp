@@ -6,7 +6,8 @@
 
 namespace kernels {
 
-void transpose(const float* src, float* dst, int rows, int cols) {
+void transpose(const float* src, float* dst, int rows, int cols)
+{
     require_non_null(src, "src");
     require_non_null(dst, "dst");
     require_positive(rows, "rows");
@@ -19,7 +20,13 @@ void transpose(const float* src, float* dst, int rows, int cols) {
     }
 }
 
-void matmul_cache_friendly(const float* A, const float* B, float* C, int M, int K, int N) {
+void matmul_cache_friendly(const float* A,
+                           const float* B,
+                           float* C,
+                           int M,
+                           int K,
+                           int N)
+{
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
@@ -27,7 +34,8 @@ void matmul_cache_friendly(const float* A, const float* B, float* C, int M, int 
     require_positive(K, "K");
     require_positive(N, "N");
 
-    std::vector<float> B_T(static_cast<std::size_t>(N) * static_cast<std::size_t>(K));
+    std::vector<float> B_T(static_cast<std::size_t>(N) *
+                           static_cast<std::size_t>(K));
     transpose(B, B_T.data(), K, N);
 
     for (int i = 0; i < M; ++i) {
@@ -41,4 +49,4 @@ void matmul_cache_friendly(const float* A, const float* B, float* C, int M, int 
     }
 }
 
-}  // namespace kernels
+} // namespace kernels
