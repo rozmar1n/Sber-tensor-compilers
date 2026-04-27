@@ -11,7 +11,7 @@
 - `conv2d_naive` для NCHW valid convolution
 - `im2col`
 - `conv2d_im2col` через Im2Col + MatMul
-- correctness tests
+- GoogleTest correctness tests
 - Google Benchmark
 - CSV results и PNG-графики
 
@@ -29,13 +29,15 @@ cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DKERNELS_ENABLE_AVX2=ON
 cmake --build build
 ```
 
-Требуется установленный Google Benchmark.
+Требуются установленные GoogleTest и Google Benchmark.
 
 ## Тесты
 
 ```bash
 ctest --test-dir build --output-on-failure
 ```
+
+CTest запускает отдельные GoogleTest cases.
 
 ## Benchmark
 

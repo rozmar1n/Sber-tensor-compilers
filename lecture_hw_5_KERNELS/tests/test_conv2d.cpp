@@ -304,28 +304,57 @@ void conv2d_im2col_rejects_oversized_matmul_shape()
 
 } // namespace
 
-std::vector<test::TestCase> conv2d_tests()
+TEST(Conv2DTest, NaiveComputesManual3x3InputWith2x2Kernel)
 {
-    return {
-        { "conv2d_naive computes manual 3x3 input with 2x2 kernel",
-          conv2d_manual_3x3_2x2 },
-        { "conv2d_im2col matches naive for 5x5 single-channel 3x3",
-          conv2d_single_channel_5x5_3x3 },
-        { "conv2d_im2col matches naive for multi-channel multi-output",
-          conv2d_multi_channel_multi_output },
-        { "conv2d_im2col matches naive for multi-batch multi-channel",
-          conv2d_multi_batch_multi_channel },
-        { "conv2d_im2col matches naive for 1x1 kernel", conv2d_kernel_1x1 },
-        { "conv2d_im2col matches naive for deterministic random data",
-          conv2d_deterministic_random_data },
-        { "im2col expands a small 3x3 input directly", im2col_small_direct },
-        { "reshape_kernel_for_im2col maps kernel to GEMM layout",
-          reshape_kernel_small_direct },
-        { "im2col preserves multi-channel column order",
-          im2col_multi_channel_direct },
-        { "reshape_kernel_for_im2col preserves multi-channel GEMM order",
-          reshape_kernel_multi_channel_direct },
-        { "conv2d_im2col rejects oversized matmul shapes",
-          conv2d_im2col_rejects_oversized_matmul_shape },
-    };
+    conv2d_manual_3x3_2x2();
+}
+
+TEST(Conv2DTest, Im2ColMatchesNaiveFor5x5SingleChannel3x3)
+{
+    conv2d_single_channel_5x5_3x3();
+}
+
+TEST(Conv2DTest, Im2ColMatchesNaiveForMultiChannelMultiOutput)
+{
+    conv2d_multi_channel_multi_output();
+}
+
+TEST(Conv2DTest, Im2ColMatchesNaiveForMultiBatchMultiChannel)
+{
+    conv2d_multi_batch_multi_channel();
+}
+
+TEST(Conv2DTest, Im2ColMatchesNaiveFor1x1Kernel)
+{
+    conv2d_kernel_1x1();
+}
+
+TEST(Conv2DTest, Im2ColMatchesNaiveForDeterministicRandomData)
+{
+    conv2d_deterministic_random_data();
+}
+
+TEST(Conv2DTest, Im2ColExpandsSmall3x3InputDirectly)
+{
+    im2col_small_direct();
+}
+
+TEST(Conv2DTest, ReshapeKernelMapsKernelToGemmLayout)
+{
+    reshape_kernel_small_direct();
+}
+
+TEST(Conv2DTest, Im2ColPreservesMultiChannelColumnOrder)
+{
+    im2col_multi_channel_direct();
+}
+
+TEST(Conv2DTest, ReshapeKernelPreservesMultiChannelGemmOrder)
+{
+    reshape_kernel_multi_channel_direct();
+}
+
+TEST(Conv2DTest, Im2ColRejectsOversizedMatmulShapes)
+{
+    conv2d_im2col_rejects_oversized_matmul_shape();
 }

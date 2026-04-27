@@ -176,20 +176,42 @@ void matmul_deterministic_random_data()
 
 } // namespace
 
-std::vector<test::TestCase> matmul_tests()
+TEST(MatMulTest, NaiveComputes1x1)
 {
-    return {
-        { "matmul_naive computes 1x1", matmul_1x1 },
-        { "matmul_naive computes 2x2 manual example", matmul_2x2_manual },
-        { "optimized matmul computes rectangular 3x5 by 5x4",
-          matmul_rectangular_3x5_5x4 },
-        { "optimized matmul handles non-AVX tail",
-          matmul_non_avx_tail_7x10_10x9 },
-        { "optimized matmul handles non-tile-aligned shapes",
-          matmul_non_tile_aligned_31x17_17x23 },
-        { "optimized matmul handles zero matrix", matmul_zero_matrix },
-        { "optimized matmul handles identity matrix", matmul_identity_matrix },
-        { "optimized matmul handles deterministic random data",
-          matmul_deterministic_random_data },
-    };
+    matmul_1x1();
+}
+
+TEST(MatMulTest, NaiveComputes2x2ManualExample)
+{
+    matmul_2x2_manual();
+}
+
+TEST(MatMulTest, OptimizedKernelsComputeRectangular3x5By5x4)
+{
+    matmul_rectangular_3x5_5x4();
+}
+
+TEST(MatMulTest, OptimizedKernelsHandleNonAvxTail)
+{
+    matmul_non_avx_tail_7x10_10x9();
+}
+
+TEST(MatMulTest, OptimizedKernelsHandleNonTileAlignedShapes)
+{
+    matmul_non_tile_aligned_31x17_17x23();
+}
+
+TEST(MatMulTest, OptimizedKernelsHandleZeroMatrix)
+{
+    matmul_zero_matrix();
+}
+
+TEST(MatMulTest, OptimizedKernelsHandleIdentityMatrix)
+{
+    matmul_identity_matrix();
+}
+
+TEST(MatMulTest, OptimizedKernelsHandleDeterministicRandomData)
+{
+    matmul_deterministic_random_data();
 }

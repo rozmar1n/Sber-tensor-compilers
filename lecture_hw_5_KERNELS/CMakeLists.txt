@@ -45,13 +45,19 @@ else()
     endif()
 endif()
 
+find_package(GTest REQUIRED)
+
 add_executable(kernels_tests
     tests/test_main.cpp
     tests/test_matmul.cpp
     tests/test_conv2d.cpp
 )
 
-target_link_libraries(kernels_tests PRIVATE kernels)
+target_link_libraries(kernels_tests
+    PRIVATE
+        kernels
+        GTest::gtest
+)
 target_compile_options(kernels_tests PRIVATE -Wall -Wextra -Wpedantic)
 
 find_package(benchmark REQUIRED)
@@ -68,4 +74,5 @@ target_link_libraries(kernels_bench
 target_compile_options(kernels_bench PRIVATE -Wall -Wextra -Wpedantic)
 
 enable_testing()
-add_test(NAME kernels_tests COMMAND kernels_tests)
+include(GoogleTest)
+gtest_discover_tests(kernels_tests)
