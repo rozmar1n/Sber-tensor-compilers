@@ -1,6 +1,7 @@
 #include "kernels/conv2d.hpp"
 #include "test_utils.hpp"
 
+#include <limits>
 #include <random>
 #include <string>
 #include <vector>
@@ -155,6 +156,76 @@ void reshape_kernel_small_direct() {
                              kEps, "kernel reshape");
 }
 
+void im2col_multi_channel_direct() {
+    const std::vector<float> input{
+        1.0f, 2.0f, 3.0f,
+        4.0f, 5.0f, 6.0f,
+        7.0f, 8.0f, 9.0f,
+
+        101.0f, 102.0f, 103.0f,
+        104.0f, 105.0f, 106.0f,
+        107.0f, 108.0f, 109.0f,
+    };
+    std::vector<float> col(4 * 8, 0.0f);
+
+    kernels::im2col(input.data(), col.data(), 1, 2, 3, 3, 2, 2);
+
+    test::expect_vector_near(
+        col,
+        {
+            1.0f, 2.0f, 4.0f, 5.0f, 101.0f, 102.0f, 104.0f, 105.0f,
+            2.0f, 3.0f, 5.0f, 6.0f, 102.0f, 103.0f, 105.0f, 106.0f,
+            4.0f, 5.0f, 7.0f, 8.0f, 104.0f, 105.0f, 107.0f, 108.0f,
+            5.0f, 6.0f, 8.0f, 9.0f, 105.0f, 106.0f, 108.0f, 109.0f,
+        },
+        kEps, "multi-channel direct im2col");
+}
+
+void reshape_kernel_multi_channel_direct() {
+    const std::vector<float> kernel{
+        1.0f, 2.0f, 3.0f, 4.0f,
+        11.0f, 12.0f, 13.0f, 14.0f,
+
+        101.0f, 102.0f, 103.0f, 104.0f,
+        111.0f, 112.0f, 113.0f, 114.0f,
+    };
+    std::vector<float> kernel_matrix(8 * 2, 0.0f);
+
+    kernels::reshape_kernel_for_im2col(kernel.data(), kernel_matrix.data(), 2, 2, 2, 2);
+
+    test::expect_vector_near(kernel_matrix,
+                             {
+                                 1.0f, 101.0f,
+                                 2.0f, 102.0f,
+                                 3.0f, 103.0f,
+                                 4.0f, 104.0f,
+                                 11.0f, 111.0f,
+                                 12.0f, 112.0f,
+                                 13.0f, 113.0f,
+                                 14.0f, 114.0f,
+                             },
+                             kEps, "multi-channel kernel reshape");
+}
+
+void conv2d_im2col_rejects_oversized_matmul_shape() {
+    const std::vector<float> input{1.0f};
+    const std::vector<float> kernel{1.0f};
+    std::vector<float> output(1, 0.0f);
+
+    bool threw = false;
+    try {
+        kernels::conv2d_im2col(input.data(), kernel.data(), output.data(),
+                               std::numeric_limits<int>::max(), 1, 2, 2, 1, 1, 1);
+    } catch (const std::overflow_error&) {
+        threw = true;
+    } catch (const std::invalid_argument&) {
+        threw = true;
+    }
+    if (!threw) {
+        throw std::runtime_error("conv2d_im2col did not reject oversized matmul shape");
+    }
+}
+
 }  // namespace
 
 std::vector<test::TestCase> conv2d_tests() {
@@ -171,5 +242,10 @@ std::vector<test::TestCase> conv2d_tests() {
          conv2d_deterministic_random_data},
         {"im2col expands a small 3x3 input directly", im2col_small_direct},
         {"reshape_kernel_for_im2col maps kernel to GEMM layout", reshape_kernel_small_direct},
+        {"im2col preserves multi-channel column order", im2col_multi_channel_direct},
+        {"reshape_kernel_for_im2col preserves multi-channel GEMM order",
+         reshape_kernel_multi_channel_direct},
+        {"conv2d_im2col rejects oversized matmul shapes",
+         conv2d_im2col_rejects_oversized_matmul_shape},
     };
 }

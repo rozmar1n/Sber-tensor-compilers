@@ -31,15 +31,48 @@ void conv2d_im2col(const float* input,
 
     const int height_out = conv2d_output_size(height, kernel_h);
     const int width_out = conv2d_output_size(width, kernel_w);
-    const int m = batch * height_out * width_out;
-    const int k = channels_in * kernel_h * kernel_w;
-    const int n_mat = channels_out;
+    const std::size_t batch_size = to_size(batch, "batch");
+    const std::size_t channels_in_size = to_size(channels_in, "channels_in");
+    const std::size_t height_size = to_size(height, "height");
+    const std::size_t width_size = to_size(width, "width");
+    const std::size_t height_out_size = to_size(height_out, "height_out");
+    const std::size_t width_out_size = to_size(width_out, "width_out");
+    const std::size_t channels_out_size = to_size(channels_out, "channels_out");
+    const std::size_t kernel_h_size = to_size(kernel_h, "kernel_h");
+    const std::size_t kernel_w_size = to_size(kernel_w, "kernel_w");
 
-    std::vector<float> col(static_cast<std::size_t>(m) * static_cast<std::size_t>(k));
-    std::vector<float> kernel_matrix(static_cast<std::size_t>(k) *
-                                     static_cast<std::size_t>(n_mat));
-    std::vector<float> output_matrix(static_cast<std::size_t>(m) *
-                                     static_cast<std::size_t>(n_mat));
+    const std::size_t m_size =
+        checked_mul_size(checked_mul_size(batch_size, height_out_size, "matmul M"),
+                         width_out_size, "matmul M");
+    const std::size_t k_size =
+        checked_mul_size(checked_mul_size(channels_in_size, kernel_h_size, "matmul K"),
+                         kernel_w_size, "matmul K");
+    const std::size_t n_size = channels_out_size;
+    const int m = checked_int_from_size(m_size, "matmul M");
+    const int k = checked_int_from_size(k_size, "matmul K");
+    const int n_mat = checked_int_from_size(n_size, "matmul N");
+
+    const std::size_t input_image_size =
+        checked_mul_size(height_size, width_size, "input image size");
+    const std::size_t input_channel_size =
+        checked_mul_size(channels_in_size, input_image_size, "input channel size");
+    checked_mul_size(batch_size, input_channel_size, "input size");
+    checked_mul_size(channels_out_size, k_size, "kernel size");
+
+    const std::size_t col_size = checked_mul_size(m_size, k_size, "im2col size");
+    const std::size_t kernel_matrix_size =
+        checked_mul_size(k_size, n_size, "kernel matrix size");
+    const std::size_t output_matrix_size =
+        checked_mul_size(m_size, n_size, "output matrix size");
+    const std::size_t output_image_size =
+        checked_mul_size(height_out_size, width_out_size, "output image size");
+    const std::size_t output_channel_size =
+        checked_mul_size(channels_out_size, output_image_size, "output channel size");
+    checked_mul_size(batch_size, output_channel_size, "output size");
+
+    std::vector<float> col(col_size);
+    std::vector<float> kernel_matrix(kernel_matrix_size);
+    std::vector<float> output_matrix(output_matrix_size);
 
     im2col(input, col.data(), batch, channels_in, height, width, kernel_h, kernel_w);
     reshape_kernel_for_im2col(kernel, kernel_matrix.data(), channels_out, channels_in,
@@ -47,13 +80,20 @@ void conv2d_im2col(const float* input,
     matmul_vectorized(col.data(), kernel_matrix.data(), output_matrix.data(), m, k, n_mat);
 
     for (int row = 0; row < m; ++row) {
-        const int n = row / (height_out * width_out);
-        const int output_position = row % (height_out * width_out);
-        const int oh = output_position / width_out;
-        const int ow = output_position % width_out;
+        const std::size_t row_size = static_cast<std::size_t>(row);
+        const std::size_t n = row_size / output_image_size;
+        const std::size_t output_position = row_size % output_image_size;
+        const std::size_t oh = output_position / width_out_size;
+        const std::size_t ow = output_position % width_out_size;
         for (int co = 0; co < channels_out; ++co) {
-            output[((n * channels_out + co) * height_out + oh) * width_out + ow] =
-                output_matrix[row * channels_out + co];
+            const std::size_t output_index =
+                ((n * channels_out_size + static_cast<std::size_t>(co)) * height_out_size +
+                 oh) *
+                    width_out_size +
+                ow;
+            const std::size_t output_matrix_index =
+                row_size * channels_out_size + static_cast<std::size_t>(co);
+            output[output_index] = output_matrix[output_matrix_index];
         }
     }
 }

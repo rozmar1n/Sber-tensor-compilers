@@ -23,19 +23,52 @@ void im2col(const float* input,
 
     const int height_out = conv2d_output_size(height, kernel_h);
     const int width_out = conv2d_output_size(width, kernel_w);
-    const int col_width = channels_in * kernel_h * kernel_w;
+    const std::size_t batch_size = to_size(batch, "batch");
+    const std::size_t channels_in_size = to_size(channels_in, "channels_in");
+    const std::size_t height_size = to_size(height, "height");
+    const std::size_t width_size = to_size(width, "width");
+    const std::size_t kernel_h_size = to_size(kernel_h, "kernel_h");
+    const std::size_t kernel_w_size = to_size(kernel_w, "kernel_w");
+    const std::size_t height_out_size = to_size(height_out, "height_out");
+    const std::size_t width_out_size = to_size(width_out, "width_out");
+
+    const std::size_t col_width =
+        checked_mul_size(checked_mul_size(channels_in_size, kernel_h_size, "im2col width"),
+                         kernel_w_size, "im2col width");
+    const std::size_t col_rows =
+        checked_mul_size(checked_mul_size(batch_size, height_out_size, "im2col rows"),
+                         width_out_size, "im2col rows");
+    checked_mul_size(col_rows, col_width, "im2col size");
+
+    const std::size_t input_image_size =
+        checked_mul_size(height_size, width_size, "input image size");
+    const std::size_t input_channel_size =
+        checked_mul_size(channels_in_size, input_image_size, "input channel size");
+    checked_mul_size(batch_size, input_channel_size, "input size");
 
     for (int n = 0; n < batch; ++n) {
         for (int oh = 0; oh < height_out; ++oh) {
             for (int ow = 0; ow < width_out; ++ow) {
-                const int row = (n * height_out + oh) * width_out + ow;
+                const std::size_t row =
+                    (static_cast<std::size_t>(n) * height_out_size +
+                     static_cast<std::size_t>(oh)) *
+                        width_out_size +
+                    static_cast<std::size_t>(ow);
                 for (int ci = 0; ci < channels_in; ++ci) {
                     for (int kh = 0; kh < kernel_h; ++kh) {
                         for (int kw = 0; kw < kernel_w; ++kw) {
-                            const int column = (ci * kernel_h + kh) * kernel_w + kw;
-                            const int input_index =
-                                ((n * channels_in + ci) * height + (oh + kh)) * width +
-                                (ow + kw);
+                            const std::size_t column =
+                                (static_cast<std::size_t>(ci) * kernel_h_size +
+                                 static_cast<std::size_t>(kh)) *
+                                    kernel_w_size +
+                                static_cast<std::size_t>(kw);
+                            const std::size_t input_index =
+                                ((static_cast<std::size_t>(n) * channels_in_size +
+                                  static_cast<std::size_t>(ci)) *
+                                     height_size +
+                                 static_cast<std::size_t>(oh + kh)) *
+                                    width_size +
+                                static_cast<std::size_t>(ow + kw);
                             col[row * col_width + column] = input[input_index];
                         }
                     }
@@ -58,13 +91,36 @@ void reshape_kernel_for_im2col(const float* kernel,
     require_positive(kernel_h, "kernel_h");
     require_positive(kernel_w, "kernel_w");
 
+    const std::size_t channels_out_size = to_size(channels_out, "channels_out");
+    const std::size_t channels_in_size = to_size(channels_in, "channels_in");
+    const std::size_t kernel_h_size = to_size(kernel_h, "kernel_h");
+    const std::size_t kernel_w_size = to_size(kernel_w, "kernel_w");
+    const std::size_t kernel_spatial_size =
+        checked_mul_size(kernel_h_size, kernel_w_size, "kernel spatial size");
+    const std::size_t kernel_input_size =
+        checked_mul_size(channels_in_size, kernel_spatial_size, "kernel input size");
+    checked_mul_size(channels_out_size, kernel_input_size, "kernel size");
+    checked_mul_size(kernel_input_size, channels_out_size, "kernel matrix size");
+
     for (int co = 0; co < channels_out; ++co) {
         for (int ci = 0; ci < channels_in; ++ci) {
             for (int kh = 0; kh < kernel_h; ++kh) {
                 for (int kw = 0; kw < kernel_w; ++kw) {
-                    const int matrix_row = (ci * kernel_h + kh) * kernel_w + kw;
-                    kernel_matrix[matrix_row * channels_out + co] =
-                        kernel[((co * channels_in + ci) * kernel_h + kh) * kernel_w + kw];
+                    const std::size_t matrix_row =
+                        (static_cast<std::size_t>(ci) * kernel_h_size +
+                         static_cast<std::size_t>(kh)) *
+                            kernel_w_size +
+                        static_cast<std::size_t>(kw);
+                    const std::size_t matrix_index =
+                        matrix_row * channels_out_size + static_cast<std::size_t>(co);
+                    const std::size_t kernel_index =
+                        ((static_cast<std::size_t>(co) * channels_in_size +
+                          static_cast<std::size_t>(ci)) *
+                             kernel_h_size +
+                         static_cast<std::size_t>(kh)) *
+                            kernel_w_size +
+                        static_cast<std::size_t>(kw);
+                    kernel_matrix[matrix_index] = kernel[kernel_index];
                 }
             }
         }
