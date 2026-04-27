@@ -76,6 +76,7 @@ endif()
 
 if(KERNELS_BUILD_BENCHMARKS)
     find_package(benchmark REQUIRED)
+    find_package(Threads REQUIRED)
 
     add_executable(kernels_bench
         benchmarks/kernels_bench.cpp
@@ -85,6 +86,7 @@ if(KERNELS_BUILD_BENCHMARKS)
         PRIVATE
             kernels
             benchmark::benchmark
+            Threads::Threads
     )
     kernels_enable_warnings(kernels_bench)
 endif()
