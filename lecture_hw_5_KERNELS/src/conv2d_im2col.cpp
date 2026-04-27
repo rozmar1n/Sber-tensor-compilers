@@ -42,32 +42,32 @@ void conv2d_im2col(const float* input,
     const std::size_t kernel_h_size = to_size(kernel_h, "kernel_h");
     const std::size_t kernel_w_size = to_size(kernel_w, "kernel_w");
 
-    const std::size_t m_size = checked_mul_size(
-        checked_mul_size(batch_size, height_out_size, "matmul M"),
+    const std::size_t patch_count = checked_mul_size(
+        checked_mul_size(batch_size, height_out_size, "patch count"),
         width_out_size,
-        "matmul M");
-    const std::size_t k_size = checked_mul_size(
-        checked_mul_size(channels_in_size, kernel_h_size, "matmul K"),
+        "patch count");
+    const std::size_t patch_size = checked_mul_size(
+        checked_mul_size(channels_in_size, kernel_h_size, "patch size"),
         kernel_w_size,
-        "matmul K");
-    const std::size_t n_size = channels_out_size;
-    const int m = checked_int_from_size(m_size, "matmul M");
-    const int k = checked_int_from_size(k_size, "matmul K");
-    const int n_mat = checked_int_from_size(n_size, "matmul N");
+        "patch size");
+    const std::size_t out_channel_count = channels_out_size;
+    const int matmul_m = checked_int_from_size(patch_count, "matmul M");
+    const int matmul_k = checked_int_from_size(patch_size, "matmul K");
+    const int matmul_n = checked_int_from_size(out_channel_count, "matmul N");
 
     const std::size_t input_image_size =
         checked_mul_size(height_size, width_size, "input image size");
     const std::size_t input_channel_size = checked_mul_size(
         channels_in_size, input_image_size, "input channel size");
     checked_mul_size(batch_size, input_channel_size, "input size");
-    checked_mul_size(channels_out_size, k_size, "kernel size");
+    checked_mul_size(channels_out_size, patch_size, "kernel size");
 
     const std::size_t col_size =
-        checked_mul_size(m_size, k_size, "im2col size");
+        checked_mul_size(patch_count, patch_size, "im2col size");
     const std::size_t kernel_matrix_size =
-        checked_mul_size(k_size, n_size, "kernel matrix size");
+        checked_mul_size(patch_size, out_channel_count, "kernel matrix size");
     const std::size_t output_matrix_size =
-        checked_mul_size(m_size, n_size, "output matrix size");
+        checked_mul_size(patch_count, out_channel_count, "output matrix size");
     const std::size_t output_image_size =
         checked_mul_size(height_out_size, width_out_size, "output image size");
     const std::size_t output_channel_size = checked_mul_size(
@@ -92,10 +92,14 @@ void conv2d_im2col(const float* input,
                               channels_in,
                               kernel_h,
                               kernel_w);
-    matmul_vectorized(
-        col.data(), kernel_matrix.data(), output_matrix.data(), m, k, n_mat);
+    matmul_vectorized(col.data(),
+                      kernel_matrix.data(),
+                      output_matrix.data(),
+                      matmul_m,
+                      matmul_k,
+                      matmul_n);
 
-    for (int row = 0; row < m; ++row) {
+    for (int row = 0; row < matmul_m; ++row) {
         const std::size_t row_size = static_cast<std::size_t>(row);
         const std::size_t n = row_size / output_image_size;
         const std::size_t output_position = row_size % output_image_size;

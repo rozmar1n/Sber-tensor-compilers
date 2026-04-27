@@ -3,12 +3,24 @@
 
 #include <limits>
 #include <random>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 namespace {
 
 constexpr float kEps = 1e-4f;
+
+struct ConvShape
+{
+    int batch;
+    int channels_in;
+    int height;
+    int width;
+    int channels_out;
+    int kernel_h;
+    int kernel_w;
+};
 
 std::vector<float> sequential_values(int size,
                                      float scale = 1.0f,
@@ -21,9 +33,9 @@ std::vector<float> sequential_values(int size,
     return values;
 }
 
-std::vector<float> random_values(int size)
+std::vector<float> random_values(int size, unsigned int seed)
 {
-    std::mt19937 rng(24680);
+    std::mt19937 rng(seed);
     std::uniform_real_distribution<float> dist(-1.0f, 1.0f);
     std::vector<float> values(size);
     for (float& value : values) {
@@ -32,60 +44,94 @@ std::vector<float> random_values(int size)
     return values;
 }
 
-int output_elements(int batch,
-                    int channels_out,
-                    int height,
-                    int width,
-                    int kernel_h,
-                    int kernel_w)
+int input_elements(const ConvShape& shape)
 {
-    const int h_out = kernels::conv2d_output_size(height, kernel_h);
-    const int w_out = kernels::conv2d_output_size(width, kernel_w);
-    return batch * channels_out * h_out * w_out;
+    return shape.batch * shape.channels_in * shape.height * shape.width;
+}
+
+int kernel_elements(const ConvShape& shape)
+{
+    return shape.channels_out * shape.channels_in * shape.kernel_h *
+           shape.kernel_w;
+}
+
+int output_elements(const ConvShape& shape)
+{
+    const int h_out = kernels::conv2d_output_size(shape.height, shape.kernel_h);
+    const int w_out = kernels::conv2d_output_size(shape.width, shape.kernel_w);
+    return shape.batch * shape.channels_out * h_out * w_out;
 }
 
 void expect_im2col_matches_naive(const std::vector<float>& input,
                                  const std::vector<float>& kernel,
-                                 int batch,
-                                 int channels_in,
-                                 int height,
-                                 int width,
-                                 int channels_out,
-                                 int kernel_h,
-                                 int kernel_w,
+                                 const ConvShape& shape,
                                  const char* case_name)
 {
-    const int out_size =
-        output_elements(batch, channels_out, height, width, kernel_h, kernel_w);
+    const int out_size = output_elements(shape);
     std::vector<float> expected(out_size, 0.0f);
     std::vector<float> actual(out_size, -1.0f);
 
     kernels::conv2d_naive(input.data(),
                           kernel.data(),
                           expected.data(),
-                          batch,
-                          channels_in,
-                          height,
-                          width,
-                          channels_out,
-                          kernel_h,
-                          kernel_w);
+                          shape.batch,
+                          shape.channels_in,
+                          shape.height,
+                          shape.width,
+                          shape.channels_out,
+                          shape.kernel_h,
+                          shape.kernel_w);
     kernels::conv2d_im2col(input.data(),
                            kernel.data(),
                            actual.data(),
-                           batch,
-                           channels_in,
-                           height,
-                           width,
-                           channels_out,
-                           kernel_h,
-                           kernel_w);
+                           shape.batch,
+                           shape.channels_in,
+                           shape.height,
+                           shape.width,
+                           shape.channels_out,
+                           shape.kernel_h,
+                           shape.kernel_w);
 
     test::expect_vector_near(actual, expected, kEps, case_name);
 }
 
+void expect_conv2d_matches_expected(const std::vector<float>& input,
+                                    const std::vector<float>& kernel,
+                                    const std::vector<float>& expected,
+                                    const ConvShape& shape,
+                                    const char* case_name)
+{
+    std::vector<float> naive(output_elements(shape), 0.0f);
+    std::vector<float> im2col(output_elements(shape), -1.0f);
+
+    kernels::conv2d_naive(input.data(),
+                          kernel.data(),
+                          naive.data(),
+                          shape.batch,
+                          shape.channels_in,
+                          shape.height,
+                          shape.width,
+                          shape.channels_out,
+                          shape.kernel_h,
+                          shape.kernel_w);
+    kernels::conv2d_im2col(input.data(),
+                           kernel.data(),
+                           im2col.data(),
+                           shape.batch,
+                           shape.channels_in,
+                           shape.height,
+                           shape.width,
+                           shape.channels_out,
+                           shape.kernel_h,
+                           shape.kernel_w);
+
+    test::expect_vector_near(naive, expected, kEps, case_name);
+    test::expect_vector_near(im2col, expected, kEps, case_name);
+}
+
 void conv2d_manual_3x3_2x2()
 {
+    constexpr ConvShape shape{ 1, 1, 3, 3, 1, 2, 2 };
     const std::vector<float> input{
         1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f, 9.0f,
     };
@@ -95,67 +141,91 @@ void conv2d_manual_3x3_2x2()
         0.0f,
         -1.0f,
     };
-    std::vector<float> output(4, 0.0f);
 
-    kernels::conv2d_naive(
-        input.data(), kernel.data(), output.data(), 1, 1, 3, 3, 1, 2, 2);
+    expect_conv2d_matches_expected(input,
+                                   kernel,
+                                   { -4.0f, -4.0f, -4.0f, -4.0f },
+                                   shape,
+                                   "manual 3x3 2x2 conv");
+}
 
-    test::expect_vector_near(
-        output, { -4.0f, -4.0f, -4.0f, -4.0f }, kEps, "manual 3x3 2x2 conv");
-    expect_im2col_matches_naive(
-        input, kernel, 1, 1, 3, 3, 1, 2, 2, "manual 3x3 2x2 im2col conv");
+void conv2d_multi_channel_1x1_expected()
+{
+    constexpr ConvShape shape{ 1, 2, 2, 2, 2, 1, 1 };
+    const std::vector<float> input{
+        1.0f, 2.0f, 3.0f, 4.0f, 10.0f, 20.0f, 30.0f, 40.0f,
+    };
+    const std::vector<float> kernel{
+        1.0f,
+        0.5f,
+        -1.0f,
+        2.0f,
+    };
+
+    expect_conv2d_matches_expected(
+        input,
+        kernel,
+        { 6.0f, 12.0f, 18.0f, 24.0f, 19.0f, 38.0f, 57.0f, 76.0f },
+        shape,
+        "multi-channel 1x1 conv");
 }
 
 void conv2d_single_channel_5x5_3x3()
 {
+    constexpr ConvShape shape{ 1, 1, 5, 5, 1, 3, 3 };
     const std::vector<float> input =
-        sequential_values(1 * 1 * 5 * 5, 0.25f, -2.0f);
+        sequential_values(input_elements(shape), 0.25f, -2.0f);
     const std::vector<float> kernel =
-        sequential_values(1 * 1 * 3 * 3, -0.125f, 1.0f);
+        sequential_values(kernel_elements(shape), -0.125f, 1.0f);
 
-    expect_im2col_matches_naive(
-        input, kernel, 1, 1, 5, 5, 1, 3, 3, "single-channel 5x5 3x3");
+    expect_im2col_matches_naive(input, kernel, shape, "single-channel 5x5 3x3");
 }
 
 void conv2d_multi_channel_multi_output()
 {
+    constexpr ConvShape shape{ 1, 3, 8, 8, 4, 3, 3 };
     const std::vector<float> input =
-        sequential_values(1 * 3 * 8 * 8, 0.01f, -1.0f);
+        sequential_values(input_elements(shape), 0.01f, -1.0f);
     const std::vector<float> kernel =
-        sequential_values(4 * 3 * 3 * 3, -0.015f, 0.75f);
+        sequential_values(kernel_elements(shape), -0.015f, 0.75f);
 
     expect_im2col_matches_naive(
-        input, kernel, 1, 3, 8, 8, 4, 3, 3, "N=1 C_in=3 C_out=4 8x8 3x3");
+        input, kernel, shape, "N=1 C_in=3 C_out=4 8x8 3x3");
 }
 
 void conv2d_multi_batch_multi_channel()
 {
+    constexpr ConvShape shape{ 2, 3, 8, 8, 5, 3, 3 };
     const std::vector<float> input =
-        sequential_values(2 * 3 * 8 * 8, 0.02f, -3.0f);
+        sequential_values(input_elements(shape), 0.02f, -3.0f);
     const std::vector<float> kernel =
-        sequential_values(5 * 3 * 3 * 3, 0.01f, -0.5f);
+        sequential_values(kernel_elements(shape), 0.01f, -0.5f);
 
     expect_im2col_matches_naive(
-        input, kernel, 2, 3, 8, 8, 5, 3, 3, "N=2 C_in=3 C_out=5 8x8 3x3");
+        input, kernel, shape, "N=2 C_in=3 C_out=5 8x8 3x3");
 }
 
 void conv2d_kernel_1x1()
 {
+    constexpr ConvShape shape{ 1, 3, 4, 4, 2, 1, 1 };
     const std::vector<float> input =
-        sequential_values(1 * 3 * 4 * 4, 0.1f, -2.0f);
+        sequential_values(input_elements(shape), 0.1f, -2.0f);
     const std::vector<float> kernel =
-        sequential_values(2 * 3 * 1 * 1, 0.2f, -0.3f);
+        sequential_values(kernel_elements(shape), 0.2f, -0.3f);
 
-    expect_im2col_matches_naive(input, kernel, 1, 3, 4, 4, 2, 1, 1, "1x1 conv");
+    expect_im2col_matches_naive(input, kernel, shape, "1x1 conv");
 }
 
 void conv2d_deterministic_random_data()
 {
-    const std::vector<float> input = random_values(2 * 3 * 8 * 8);
-    const std::vector<float> kernel = random_values(5 * 3 * 3 * 3);
+    constexpr ConvShape shape{ 2, 3, 8, 8, 5, 3, 3 };
+    const std::vector<float> input =
+        random_values(input_elements(shape), 24680);
+    const std::vector<float> kernel =
+        random_values(kernel_elements(shape), 86420);
 
     expect_im2col_matches_naive(
-        input, kernel, 2, 3, 8, 8, 5, 3, 3, "deterministic random conv");
+        input, kernel, shape, "deterministic random conv");
 }
 
 void im2col_small_direct()
@@ -279,27 +349,17 @@ void conv2d_im2col_rejects_oversized_matmul_shape()
     const std::vector<float> kernel{ 1.0f };
     std::vector<float> output(1, 0.0f);
 
-    bool threw = false;
-    try {
-        kernels::conv2d_im2col(input.data(),
-                               kernel.data(),
-                               output.data(),
-                               std::numeric_limits<int>::max(),
-                               1,
-                               2,
-                               2,
-                               1,
-                               1,
-                               1);
-    } catch (const std::overflow_error&) {
-        threw = true;
-    } catch (const std::invalid_argument&) {
-        threw = true;
-    }
-    if (!threw) {
-        throw std::runtime_error(
-            "conv2d_im2col did not reject oversized matmul shape");
-    }
+    EXPECT_THROW(kernels::conv2d_im2col(input.data(),
+                                        kernel.data(),
+                                        output.data(),
+                                        std::numeric_limits<int>::max(),
+                                        1,
+                                        2,
+                                        2,
+                                        1,
+                                        1,
+                                        1),
+                 std::exception);
 }
 
 } // namespace
@@ -307,6 +367,11 @@ void conv2d_im2col_rejects_oversized_matmul_shape()
 TEST(Conv2DTest, NaiveComputesManual3x3InputWith2x2Kernel)
 {
     conv2d_manual_3x3_2x2();
+}
+
+TEST(Conv2DTest, AllKernelsComputeMultiChannel1x1ExpectedOutput)
+{
+    conv2d_multi_channel_1x1_expected();
 }
 
 TEST(Conv2DTest, Im2ColMatchesNaiveFor5x5SingleChannel3x3)

@@ -50,13 +50,30 @@ def time_to_ms(value: str, unit: str) -> float:
     raise ValueError(f"unsupported time unit: {unit}")
 
 
+def parse_benchmark_name(name: str) -> tuple[str, list[int]] | None:
+    parts = name.strip('"').split("/")
+    benchmark_name = parts[0]
+    args: list[int] = []
+
+    for part in parts[1:]:
+        value = part.rsplit(":", maxsplit=1)[-1]
+        try:
+            args.append(int(value))
+        except ValueError:
+            return None
+
+    return benchmark_name, args
+
+
 def normalize_google_benchmark_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     normalized: list[dict[str, str]] = []
     for row in rows:
         name = row["name"].strip('"')
-        parts = name.split("/")
-        benchmark_name = parts[0]
-        args = [int(part) for part in parts[1:]]
+        parsed_name = parse_benchmark_name(name)
+        if parsed_name is None:
+            continue
+
+        benchmark_name, args = parsed_name
         time_ms = time_to_ms(row["real_time"], row["time_unit"])
 
         if benchmark_name.startswith("bench_matmul_"):
@@ -126,9 +143,9 @@ def read_rows(csv_path: Path) -> list[dict[str, str]]:
         "error_message",
     }
 
-    if fieldnames == simple_header:
+    if simple_header.issubset(fieldnames):
         return rows
-    if fieldnames == google_header:
+    if google_header.issubset(fieldnames):
         return normalize_google_benchmark_rows(rows)
     raise ValueError(f"unexpected CSV header in {csv_path}")
 
@@ -186,7 +203,7 @@ def plot_conv(rows: list[dict[str, str]], output_dir: Path) -> Path | None:
     for row in rows:
         if row["operation"] != "conv":
             continue
-        shape = row["input_shape"]
+        shape = f'{row["input_shape"]}, kernel={row["kernel_shape"]}'
         if shape not in shape_order:
             shape_order.append(shape)
         series[row["variant"]].append((shape, float(row["time_ms"])))
@@ -202,7 +219,7 @@ def plot_conv(rows: list[dict[str, str]], output_dir: Path) -> Path | None:
         ax.plot(x_positions, times, marker="o", linewidth=2, label=display_variant(variant))
 
     ax.set_title("Conv2D benchmark")
-    ax.set_xlabel("Input shape (N x C x H x W)")
+    ax.set_xlabel("Input shape and kernel shape")
     ax.set_ylabel("Average time, ms")
     ax.set_xticks(x_positions)
     ax.set_xticklabels(shape_order, rotation=20, ha="right")

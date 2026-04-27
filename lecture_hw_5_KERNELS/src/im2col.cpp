@@ -33,15 +33,15 @@ void im2col(const float* input,
     const std::size_t height_out_size = to_size(height_out, "height_out");
     const std::size_t width_out_size = to_size(width_out, "width_out");
 
-    const std::size_t col_width = checked_mul_size(
-        checked_mul_size(channels_in_size, kernel_h_size, "im2col width"),
+    const std::size_t patch_size = checked_mul_size(
+        checked_mul_size(channels_in_size, kernel_h_size, "patch size"),
         kernel_w_size,
-        "im2col width");
+        "patch size");
     const std::size_t col_rows = checked_mul_size(
         checked_mul_size(batch_size, height_out_size, "im2col rows"),
         width_out_size,
         "im2col rows");
-    checked_mul_size(col_rows, col_width, "im2col size");
+    checked_mul_size(col_rows, patch_size, "im2col size");
 
     const std::size_t input_image_size =
         checked_mul_size(height_size, width_size, "input image size");
@@ -73,7 +73,7 @@ void im2col(const float* input,
                                  static_cast<std::size_t>(oh + kh)) *
                                     width_size +
                                 static_cast<std::size_t>(ow + kw);
-                            col[row * col_width + column] = input[input_index];
+                            col[row * patch_size + column] = input[input_index];
                         }
                     }
                 }
@@ -108,6 +108,7 @@ void reshape_kernel_for_im2col(const float* kernel,
     checked_mul_size(
         kernel_input_size, channels_out_size, "kernel matrix size");
 
+    // OIHW kernel layout becomes [ci, kh, kw, co] row-major GEMM layout.
     for (int co = 0; co < channels_out; ++co) {
         for (int ci = 0; ci < channels_in; ++ci) {
             for (int kh = 0; kh < kernel_h; ++kh) {

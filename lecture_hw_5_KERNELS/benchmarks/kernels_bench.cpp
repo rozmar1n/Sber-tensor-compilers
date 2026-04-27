@@ -70,6 +70,8 @@ void bench_matmul_naive(benchmark::State& state)
     std::vector<float> c(static_cast<std::size_t>(m) * n, 0.0f);
 
     for (auto _ : state) {
+        benchmark::DoNotOptimize(a.data());
+        benchmark::DoNotOptimize(b.data());
         kernels::matmul_naive(a.data(), b.data(), c.data(), m, k, n);
         benchmark::DoNotOptimize(c.data());
         benchmark::ClobberMemory();
@@ -96,6 +98,8 @@ void bench_matmul_cache_friendly(benchmark::State& state)
     std::vector<float> c(static_cast<std::size_t>(m) * n, 0.0f);
 
     for (auto _ : state) {
+        benchmark::DoNotOptimize(a.data());
+        benchmark::DoNotOptimize(b.data());
         kernels::matmul_cache_friendly(a.data(), b.data(), c.data(), m, k, n);
         benchmark::DoNotOptimize(c.data());
         benchmark::ClobberMemory();
@@ -123,6 +127,8 @@ void bench_matmul_tiled(benchmark::State& state)
     std::vector<float> c(static_cast<std::size_t>(m) * n, 0.0f);
 
     for (auto _ : state) {
+        benchmark::DoNotOptimize(a.data());
+        benchmark::DoNotOptimize(b.data());
         kernels::matmul_tiled(a.data(), b.data(), c.data(), m, k, n, tile);
         benchmark::DoNotOptimize(c.data());
         benchmark::ClobberMemory();
@@ -149,6 +155,8 @@ void bench_matmul_vectorized(benchmark::State& state)
     std::vector<float> c(static_cast<std::size_t>(m) * n, 0.0f);
 
     for (auto _ : state) {
+        benchmark::DoNotOptimize(a.data());
+        benchmark::DoNotOptimize(b.data());
         kernels::matmul_vectorized(a.data(), b.data(), c.data(), m, k, n);
         benchmark::DoNotOptimize(c.data());
         benchmark::ClobberMemory();
@@ -186,6 +194,8 @@ void bench_conv2d_naive(benchmark::State& state)
     std::vector<float> output(output_size, 0.0f);
 
     for (auto _ : state) {
+        benchmark::DoNotOptimize(input.data());
+        benchmark::DoNotOptimize(kernel.data());
         kernels::conv2d_naive(input.data(),
                               kernel.data(),
                               output.data(),
@@ -234,6 +244,8 @@ void bench_conv2d_im2col(benchmark::State& state)
     std::vector<float> output(output_size, 0.0f);
 
     for (auto _ : state) {
+        benchmark::DoNotOptimize(input.data());
+        benchmark::DoNotOptimize(kernel.data());
         kernels::conv2d_im2col(input.data(),
                                kernel.data(),
                                output.data(),
@@ -257,24 +269,54 @@ void bench_conv2d_im2col(benchmark::State& state)
 
 } // namespace
 
-BENCHMARK(bench_matmul_naive)->Arg(64)->Arg(128)->Arg(256)->Arg(512);
+BENCHMARK(bench_matmul_naive)
+    ->ArgName("size")
+    ->Arg(64)
+    ->Arg(128)
+    ->Arg(256)
+    ->Arg(512);
 
-BENCHMARK(bench_matmul_cache_friendly)->Arg(64)->Arg(128)->Arg(256)->Arg(512);
+BENCHMARK(bench_matmul_cache_friendly)
+    ->ArgName("size")
+    ->Arg(64)
+    ->Arg(128)
+    ->Arg(256)
+    ->Arg(512);
 
 BENCHMARK(bench_matmul_tiled)
+    ->ArgNames({ "size", "tile" })
     ->Args({ 64, 32 })
     ->Args({ 128, 32 })
     ->Args({ 256, 32 })
     ->Args({ 512, 32 });
 
-BENCHMARK(bench_matmul_vectorized)->Arg(64)->Arg(128)->Arg(256)->Arg(512);
+BENCHMARK(bench_matmul_vectorized)
+    ->ArgName("size")
+    ->Arg(64)
+    ->Arg(128)
+    ->Arg(256)
+    ->Arg(512);
 
 BENCHMARK(bench_conv2d_naive)
+    ->ArgNames({ "batch",
+                 "channels_in",
+                 "height",
+                 "width",
+                 "channels_out",
+                 "kernel_h",
+                 "kernel_w" })
     ->Args({ 1, 3, 32, 32, 8, 3, 3 })
     ->Args({ 1, 3, 64, 64, 16, 3, 3 })
     ->Args({ 1, 16, 64, 64, 32, 3, 3 });
 
 BENCHMARK(bench_conv2d_im2col)
+    ->ArgNames({ "batch",
+                 "channels_in",
+                 "height",
+                 "width",
+                 "channels_out",
+                 "kernel_h",
+                 "kernel_w" })
     ->Args({ 1, 3, 32, 32, 8, 3, 3 })
     ->Args({ 1, 3, 64, 64, 16, 3, 3 })
     ->Args({ 1, 16, 64, 64, 32, 3, 3 });

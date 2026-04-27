@@ -2,6 +2,7 @@
 
 #include "kernels/utils.hpp"
 
+#include <cstddef>
 #include <vector>
 
 namespace kernels {
@@ -10,12 +11,13 @@ void transpose(const float* src, float* dst, int rows, int cols)
 {
     require_non_null(src, "src");
     require_non_null(dst, "dst");
-    require_positive(rows, "rows");
-    require_positive(cols, "cols");
+    const std::size_t row_count = to_size(rows, "rows");
+    const std::size_t col_count = to_size(cols, "cols");
+    checked_mul_size(row_count, col_count, "transpose element count");
 
-    for (int i = 0; i < rows; ++i) {
-        for (int j = 0; j < cols; ++j) {
-            dst[j * rows + i] = src[i * cols + j];
+    for (std::size_t i = 0; i < row_count; ++i) {
+        for (std::size_t j = 0; j < col_count; ++j) {
+            dst[j * row_count + i] = src[i * col_count + j];
         }
     }
 }
@@ -30,21 +32,18 @@ void matmul_cache_friendly(const float* A,
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
-    require_positive(M, "M");
-    require_positive(K, "K");
-    require_positive(N, "N");
+    const MatmulShape shape = checked_matmul_shape(M, K, N);
 
-    std::vector<float> B_T(static_cast<std::size_t>(N) *
-                           static_cast<std::size_t>(K));
+    std::vector<float> B_T(shape.b_count);
     transpose(B, B_T.data(), K, N);
 
-    for (int i = 0; i < M; ++i) {
-        for (int j = 0; j < N; ++j) {
+    for (std::size_t i = 0; i < shape.m; ++i) {
+        for (std::size_t j = 0; j < shape.n; ++j) {
             float sum = 0.0f;
-            for (int k = 0; k < K; ++k) {
-                sum += A[i * K + k] * B_T[j * K + k];
+            for (std::size_t k = 0; k < shape.k; ++k) {
+                sum += A[i * shape.k + k] * B_T[j * shape.k + k];
             }
-            C[i * N + j] = sum;
+            C[i * shape.n + j] = sum;
         }
     }
 }

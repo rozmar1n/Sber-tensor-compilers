@@ -1,34 +1,34 @@
-2026-04-27T21:26:05+03:00
-Running /tmp/kernels-gbench-adapt-avx/kernels_bench
+2026-04-27T21:50:48+03:00
+Running ./build/kernels_bench
 Run on (12 X 4400 MHz CPU s)
 CPU Caches:
   L1 Data 48 KiB (x6)
   L1 Instruction 32 KiB (x6)
   L2 Unified 1280 KiB (x6)
   L3 Unified 12288 KiB (x1)
-Load Average: 0.66, 0.53, 0.52
+Load Average: 0.88, 0.81, 0.66
 ***WARNING*** CPU scaling is enabled, the benchmark real time measurements may be noisy and will incur extra overhead.
 ***WARNING*** Library was built as DEBUG. Timings may be affected.
 name,iterations,real_time,cpu_time,time_unit,bytes_per_second,items_per_second,label,error_occurred,error_message
-"bench_matmul_naive/64",84,134994,134855,ns,,3.03733e+07,"64x64x64",,
-"bench_matmul_naive/128",12,1.13889e+06,1.13885e+06,ns,,1.43864e+07,"128x128x128",,
-"bench_matmul_naive/256",2,9.96982e+06,9.96957e+06,ns,,6.57361e+06,"256x256x256",,
-"bench_matmul_naive/512",1,1.23965e+08,1.23842e+08,ns,,2.11677e+06,"512x512x512",,
-"bench_matmul_cache_friendly/64",193,72891.5,72768.4,ns,,5.62882e+07,"64x64x64",,
-"bench_matmul_cache_friendly/128",21,685998,685614,ns,,2.38968e+07,"128x128x128",,
-"bench_matmul_cache_friendly/256",2,6.71738e+06,6.71715e+06,ns,,9.75652e+06,"256x256x256",,
-"bench_matmul_cache_friendly/512",1,6.13696e+07,6.1364e+07,ns,,4.27195e+06,"512x512x512",,
-"bench_matmul_tiled/64/32",140,99828.4,99825.4,ns,,4.10316e+07,"64x64x64, tile=32",,
-"bench_matmul_tiled/128/32",18,801075,801053,ns,,2.04531e+07,"128x128x128, tile=32",,
-"bench_matmul_tiled/256/32",2,6.39246e+06,6.39225e+06,ns,,1.02524e+07,"256x256x256, tile=32",,
-"bench_matmul_tiled/512/32",1,5.26702e+07,5.26535e+07,ns,,4.97866e+06,"512x512x512, tile=32",,
-"bench_matmul_vectorized/64",798,17060.6,17060,ns,,2.40093e+08,"64x64x64",,
-"bench_matmul_vectorized/128",95,148136,148132,ns,,1.10604e+08,"128x128x128",,
-"bench_matmul_vectorized/256",12,1.14008e+06,1.13972e+06,ns,,5.75018e+07,"256x256x256",,
-"bench_matmul_vectorized/512",2,9.04582e+06,9.0455e+06,ns,,2.89806e+07,"512x512x512",,
-"bench_conv2d_naive/1/3/32/32/8/3/3",86,162013,162009,ns,,4.4442e+07,"1x3x32x32, kernel=8x3x3x3",,
-"bench_conv2d_naive/1/3/64/64/16/3/3",10,1.37375e+06,1.37372e+06,ns,,4.47717e+07,"1x3x64x64, kernel=16x3x3x3",,
-"bench_conv2d_naive/1/16/64/64/32/3/3",1,1.74566e+07,1.74561e+07,ns,,7.04672e+06,"1x16x64x64, kernel=32x16x3x3",,
-"bench_conv2d_im2col/1/3/32/32/8/3/3",241,58209.6,58207.8,ns,,1.23695e+08,"1x3x32x32, kernel=8x3x3x3",,
-"bench_conv2d_im2col/1/3/64/64/16/3/3",36,383920,383511,ns,,1.60371e+08,"1x3x64x64, kernel=16x3x3x3",,
-"bench_conv2d_im2col/1/16/64/64/32/3/3",10,1.28663e+06,1.28662e+06,ns,,9.56052e+07,"1x16x64x64, kernel=32x16x3x3",,
+"bench_matmul_naive/size:64",9654,72542.9,72539.6,ns,,5.64657e+07,"64x64x64",,
+"bench_matmul_naive/size:128",752,930843,930522,ns,,1.76073e+07,"128x128x128",,
+"bench_matmul_naive/size:256",74,9.41536e+06,9.41563e+06,ns,,6.96034e+06,"256x256x256",,
+"bench_matmul_naive/size:512",7,9.17391e+07,9.17331e+07,ns,,2.85768e+06,"512x512x512",,
+"bench_matmul_cache_friendly/size:64",9624,72697.2,72693.6,ns,,5.63461e+07,"64x64x64",,
+"bench_matmul_cache_friendly/size:128",963,727706,727751,ns,,2.25132e+07,"128x128x128",,
+"bench_matmul_cache_friendly/size:256",108,6.45812e+06,6.45826e+06,ns,,1.01476e+07,"256x256x256",,
+"bench_matmul_cache_friendly/size:512",11,6.20975e+07,6.21001e+07,ns,,4.22131e+06,"512x512x512",,
+"bench_matmul_tiled/size:64/tile:32",7068,99151.8,99157.8,ns,,4.13079e+07,"64x64x64, tile=32",,
+"bench_matmul_tiled/size:128/tile:32",882,793957,793974,ns,,2.06354e+07,"128x128x128, tile=32",,
+"bench_matmul_tiled/size:256/tile:32",110,6.35634e+06,6.35667e+06,ns,,1.03098e+07,"256x256x256, tile=32",,
+"bench_matmul_tiled/size:512/tile:32",13,5.26407e+07,5.26423e+07,ns,,4.97972e+06,"512x512x512, tile=32",,
+"bench_matmul_vectorized/size:64",40720,17180.4,17181,ns,,2.38403e+08,"64x64x64",,
+"bench_matmul_vectorized/size:128",5142,136017,136021,ns,,1.20452e+08,"128x128x128",,
+"bench_matmul_vectorized/size:256",699,1.00098e+06,1.00101e+06,ns,,6.54701e+07,"256x256x256",,
+"bench_matmul_vectorized/size:512",87,8.02649e+06,8.02633e+06,ns,,3.26605e+07,"512x512x512",,
+"bench_conv2d_naive/batch:1/channels_in:3/height:32/width:32/channels_out:8/kernel_h:3/kernel_w:3",4152,168560,168563,ns,,4.27139e+07,"1x3x32x32, kernel=8x3x3x3",,
+"bench_conv2d_naive/batch:1/channels_in:3/height:64/width:64/channels_out:16/kernel_h:3/kernel_w:3",487,1.43412e+06,1.43415e+06,ns,,4.28852e+07,"1x3x64x64, kernel=16x3x3x3",,
+"bench_conv2d_naive/batch:1/channels_in:16/height:64/width:64/channels_out:32/kernel_h:3/kernel_w:3",59,1.18425e+07,1.18419e+07,ns,,1.03876e+07,"1x16x64x64, kernel=32x16x3x3",,
+"bench_conv2d_im2col/batch:1/channels_in:3/height:32/width:32/channels_out:8/kernel_h:3/kernel_w:3",11319,61451.4,61453.2,ns,,1.17162e+08,"1x3x32x32, kernel=8x3x3x3",,
+"bench_conv2d_im2col/batch:1/channels_in:3/height:64/width:64/channels_out:16/kernel_h:3/kernel_w:3",1751,404305,404300,ns,,1.52124e+08,"1x3x64x64, kernel=16x3x3x3",,
+"bench_conv2d_im2col/batch:1/channels_in:16/height:64/width:64/channels_out:32/kernel_h:3/kernel_w:3",477,1.4696e+06,1.46955e+06,ns,,8.37046e+07,"1x16x64x64, kernel=32x16x3x3",,

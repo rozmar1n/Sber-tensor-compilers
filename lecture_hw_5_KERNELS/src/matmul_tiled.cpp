@@ -18,28 +18,25 @@ void matmul_tiled(const float* A,
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
-    require_positive(M, "M");
-    require_positive(K, "K");
-    require_positive(N, "N");
-    require_positive(tile_size, "tile_size");
+    const MatmulShape shape = checked_matmul_shape(M, K, N);
+    const std::size_t tile = to_size(tile_size, "tile_size");
 
-    std::fill(
-        C, C + static_cast<std::size_t>(M) * static_cast<std::size_t>(N), 0.0f);
+    std::fill(C, C + shape.c_count, 0.0f);
 
-    for (int ii = 0; ii < M; ii += tile_size) {
-        for (int jj = 0; jj < N; jj += tile_size) {
-            for (int kk = 0; kk < K; kk += tile_size) {
-                const int i_end = std::min(ii + tile_size, M);
-                const int j_end = std::min(jj + tile_size, N);
-                const int k_end = std::min(kk + tile_size, K);
+    for (std::size_t ii = 0; ii < shape.m; ii += tile) {
+        for (std::size_t jj = 0; jj < shape.n; jj += tile) {
+            for (std::size_t kk = 0; kk < shape.k; kk += tile) {
+                const std::size_t i_end = std::min(ii + tile, shape.m);
+                const std::size_t j_end = std::min(jj + tile, shape.n);
+                const std::size_t k_end = std::min(kk + tile, shape.k);
 
-                for (int i = ii; i < i_end; ++i) {
-                    for (int j = jj; j < j_end; ++j) {
-                        float sum = C[i * N + j];
-                        for (int k = kk; k < k_end; ++k) {
-                            sum += A[i * K + k] * B[k * N + j];
+                for (std::size_t i = ii; i < i_end; ++i) {
+                    for (std::size_t j = jj; j < j_end; ++j) {
+                        float sum = C[i * shape.n + j];
+                        for (std::size_t k = kk; k < k_end; ++k) {
+                            sum += A[i * shape.k + k] * B[k * shape.n + j];
                         }
-                        C[i * N + j] = sum;
+                        C[i * shape.n + j] = sum;
                     }
                 }
             }

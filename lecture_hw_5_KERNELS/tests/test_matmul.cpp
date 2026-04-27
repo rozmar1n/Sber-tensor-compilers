@@ -23,9 +23,9 @@ std::vector<float> sequential_matrix(int size,
     return values;
 }
 
-std::vector<float> random_matrix(int size)
+std::vector<float> random_matrix(int size, unsigned int seed)
 {
-    std::mt19937 rng(12345);
+    std::mt19937 rng(seed);
     std::uniform_real_distribution<float> dist(-2.0f, 2.0f);
     std::vector<float> values(size);
     for (float& value : values) {
@@ -43,6 +43,22 @@ std::vector<float> identity_matrix(int size)
     return values;
 }
 
+void expect_variant_matches_expected(MatmulFn fn,
+                                     const std::string& variant,
+                                     const std::vector<float>& A,
+                                     const std::vector<float>& B,
+                                     const std::vector<float>& expected,
+                                     int M,
+                                     int K,
+                                     int N)
+{
+    std::vector<float> actual(M * N, -1.0f);
+
+    fn(A.data(), B.data(), actual.data(), M, K, N);
+
+    test::expect_vector_near(actual, expected, kEps, variant.c_str());
+}
+
 void expect_variant_matches_naive(MatmulFn fn,
                                   const std::string& variant,
                                   const std::vector<float>& A,
@@ -58,6 +74,56 @@ void expect_variant_matches_naive(MatmulFn fn,
     fn(A.data(), B.data(), actual.data(), M, K, N);
 
     test::expect_vector_near(actual, expected, kEps, variant.c_str());
+}
+
+void expect_all_variants_match_expected(const std::vector<float>& A,
+                                        const std::vector<float>& B,
+                                        const std::vector<float>& expected,
+                                        int M,
+                                        int K,
+                                        int N,
+                                        const char* case_name)
+{
+    expect_variant_matches_expected(kernels::matmul_naive,
+                                    std::string(case_name) + " naive",
+                                    A,
+                                    B,
+                                    expected,
+                                    M,
+                                    K,
+                                    N);
+    expect_variant_matches_expected(kernels::matmul_cache_friendly,
+                                    std::string(case_name) + " cache-friendly",
+                                    A,
+                                    B,
+                                    expected,
+                                    M,
+                                    K,
+                                    N);
+    expect_variant_matches_expected(
+        [](const float* A_ptr,
+           const float* B_ptr,
+           float* C_ptr,
+           int m,
+           int k,
+           int n) {
+            kernels::matmul_tiled(A_ptr, B_ptr, C_ptr, m, k, n, kTileSize);
+        },
+        std::string(case_name) + " tiled",
+        A,
+        B,
+        expected,
+        M,
+        K,
+        N);
+    expect_variant_matches_expected(kernels::matmul_vectorized,
+                                    std::string(case_name) + " vectorized",
+                                    A,
+                                    B,
+                                    expected,
+                                    M,
+                                    K,
+                                    N);
 }
 
 void expect_all_variants_match_naive(const std::vector<float>& A,
@@ -102,25 +168,16 @@ void matmul_1x1()
 {
     const std::vector<float> A{ 2.0f };
     const std::vector<float> B{ 3.0f };
-    std::vector<float> C(1, 0.0f);
 
-    kernels::matmul_naive(A.data(), B.data(), C.data(), 1, 1, 1);
-
-    test::expect_near(C[0], 6.0f, kEps, "1x1 matmul");
-    expect_all_variants_match_naive(A, B, 1, 1, 1, "1x1");
+    expect_all_variants_match_expected(A, B, { 6.0f }, 1, 1, 1, "1x1");
 }
 
 void matmul_2x2_manual()
 {
     const std::vector<float> A{ 1.0f, 2.0f, 3.0f, 4.0f };
     const std::vector<float> B{ 5.0f, 6.0f, 7.0f, 8.0f };
-    std::vector<float> C(4, 0.0f);
-
-    kernels::matmul_naive(A.data(), B.data(), C.data(), 2, 2, 2);
-
-    test::expect_vector_near(
-        C, { 19.0f, 22.0f, 43.0f, 50.0f }, kEps, "2x2 matmul");
-    expect_all_variants_match_naive(A, B, 2, 2, 2, "2x2");
+    expect_all_variants_match_expected(
+        A, B, { 19.0f, 22.0f, 43.0f, 50.0f }, 2, 2, 2, "2x2");
 }
 
 void matmul_rectangular_3x5_5x4()
@@ -128,7 +185,24 @@ void matmul_rectangular_3x5_5x4()
     const std::vector<float> A = sequential_matrix(3 * 5, 0.25f, -1.0f);
     const std::vector<float> B = sequential_matrix(5 * 4, -0.125f, 2.0f);
 
-    expect_all_variants_match_naive(A, B, 3, 5, 4, "rectangular 3x5 by 5x4");
+    expect_all_variants_match_expected(A,
+                                       B,
+                                       { -2.34375f,
+                                         -2.1875f,
+                                         -2.03125f,
+                                         -1.875f,
+                                         3.125f,
+                                         2.5f,
+                                         1.875f,
+                                         1.25f,
+                                         8.59375f,
+                                         7.1875f,
+                                         5.78125f,
+                                         4.375f },
+                                       3,
+                                       5,
+                                       4,
+                                       "rectangular 3x5 by 5x4");
 }
 
 void matmul_non_avx_tail_7x10_10x9()
@@ -167,8 +241,8 @@ void matmul_identity_matrix()
 
 void matmul_deterministic_random_data()
 {
-    const std::vector<float> A = random_matrix(13 * 11);
-    const std::vector<float> B = random_matrix(11 * 7);
+    const std::vector<float> A = random_matrix(13 * 11, 12345);
+    const std::vector<float> B = random_matrix(11 * 7, 54321);
 
     expect_all_variants_match_naive(
         A, B, 13, 11, 7, "deterministic random data");
@@ -176,17 +250,17 @@ void matmul_deterministic_random_data()
 
 } // namespace
 
-TEST(MatMulTest, NaiveComputes1x1)
+TEST(MatMulTest, AllKernelsCompute1x1)
 {
     matmul_1x1();
 }
 
-TEST(MatMulTest, NaiveComputes2x2ManualExample)
+TEST(MatMulTest, AllKernelsCompute2x2ManualExample)
 {
     matmul_2x2_manual();
 }
 
-TEST(MatMulTest, OptimizedKernelsComputeRectangular3x5By5x4)
+TEST(MatMulTest, AllKernelsComputeRectangular3x5By5x4)
 {
     matmul_rectangular_3x5_5x4();
 }

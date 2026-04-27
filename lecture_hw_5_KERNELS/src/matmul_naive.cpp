@@ -2,6 +2,8 @@
 
 #include "kernels/utils.hpp"
 
+#include <cstddef>
+
 namespace kernels {
 
 void matmul_naive(const float* A, const float* B, float* C, int M, int K, int N)
@@ -9,17 +11,15 @@ void matmul_naive(const float* A, const float* B, float* C, int M, int K, int N)
     require_non_null(A, "A");
     require_non_null(B, "B");
     require_non_null(C, "C");
-    require_positive(M, "M");
-    require_positive(K, "K");
-    require_positive(N, "N");
+    const MatmulShape shape = checked_matmul_shape(M, K, N);
 
-    for (int i = 0; i < M; ++i) {
-        for (int j = 0; j < N; ++j) {
+    for (std::size_t i = 0; i < shape.m; ++i) {
+        for (std::size_t j = 0; j < shape.n; ++j) {
             float sum = 0.0f;
-            for (int k = 0; k < K; ++k) {
-                sum += A[i * K + k] * B[k * N + j];
+            for (std::size_t k = 0; k < shape.k; ++k) {
+                sum += A[i * shape.k + k] * B[k * shape.n + j];
             }
-            C[i * N + j] = sum;
+            C[i * shape.n + j] = sum;
         }
     }
 }
